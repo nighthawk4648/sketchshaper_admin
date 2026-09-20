@@ -1,220 +1,182 @@
 const navMenu = (user_type, type) => [
-	{
-		isHeadr: true,
-		title: 'menu',
-	},
+  {
+    isHeadr: true,
+    title: "menu",
+  },
 
+  {
+    title: "Dashboard",
+    icon: "heroicons-outline:home",
+    link: "/admin",
+  },
 
+  {
+    title: "Slider",
+    icon: "mdi:world",
+    child: [
+      {
+        childtitle: "Slider",
+        childlink: "/admin/slider",
+      },
+    ],
+  },
 
-	{
-		title: 'Dashboard',
-		icon: 'heroicons-outline:home',
-		link: '/admin',
-	},
+  {
+    title: "Category",
+    icon: "heroicons-outline:users",
+    child: [
+      {
+        childtitle: "Category",
+        childlink: "/admin/category",
+      },
 
-	{
-		title: 'Slider',
-		icon: 'mdi:world',
-		child: [
-			{
-				childtitle: 'Slider',
-				childlink: '/admin/slider',
-			},
+      {
+        childtitle: "Sub-Category",
+        childlink: "/admin/sub-category",
+      },
 
-		],
-	},
+      {
+        childtitle: "Assets",
+        childlink: "/admin/assets",
+      },
+    ],
+  },
 
-	{
-		title: 'Category',
-		icon: 'heroicons-outline:users',
-		child: [
-			{
-				childtitle: 'Category',
-				childlink: '/admin/category',
-			},
+  {
+    title: "General About Us",
+    icon: "heroicons-outline:users",
+    child: [
+      {
+        childtitle: "General About Us",
+        childlink: "/admin/general-about-us",
+      },
+    ],
+  },
 
-			{
-				childtitle: 'Sub-Category',
-				childlink: '/admin/sub-category',
-			},
+  {
+    title: "Footer Pages",
+    icon: "heroicons-outline:users",
+    child: [
+      {
+        childtitle: "Footer Page",
+        childlink: "/admin/footer-page",
+      },
+    ],
+  },
 
-			{
-				childtitle: 'Assets',
-				childlink: '/admin/assets',
-			},
+  {
+    title: "Social",
+    icon: "heroicons-outline:users",
+    child: [
+      {
+        childtitle: "Social",
+        childlink: "/admin/social",
+      },
+    ],
+  },
 
-		],
-	},
+  {
+    title: "Contact Messages",
+    icon: "heroicons-outline:mail",
+    link: "/admin/contact-messages",
+  },
 
+  {
+    title: "Application Settings",
+    icon: "heroicons-outline:users",
+    child: [
+      {
+        childtitle: "Application Settings",
+        childlink: "/admin/application-settings",
+      },
+    ],
+  },
 
-	{
-		title: 'General About Us',
-		icon: 'heroicons-outline:users',
-		child: [
-			{
-				childtitle: 'General About Us',
-				childlink: '/admin/general-about-us',
-			},
-		],
-	},
+  {
+    title: "Blogs",
+    icon: "mdi:world",
+    child: [
+      {
+        childtitle: "Blogs",
+        childlink: "/admin/blogs",
+      },
+    ],
+  },
 
+  {
+    title: "Supported By",
+    icon: "mdi:world",
+    child: [
+      {
+        childtitle: "Supported By",
+        childlink: "/admin/supported-by",
+      },
+    ],
+  },
 
-	{
-		title: 'Footer Pages',
-		icon: 'heroicons-outline:users',
-		child: [
-			{
-				childtitle: 'Footer Page',
-				childlink: '/admin/footer-page',
-			},
-		],
-	},
+  {
+    title: "Innovative",
+    icon: "mdi:world",
+    child: [
+      {
+        childtitle: "Innovative",
+        childlink: "/admin/innovative",
+      },
+    ],
+  },
 
-	{
-		title: 'Social',
-		icon: 'heroicons-outline:users',
-		child: [
-			{
-				childtitle: 'Social',
-				childlink: '/admin/social',
-			},
+  {
+    title: "Gallery",
+    icon: "heroicons-outline:photograph",
+    child: [
+      {
+        childtitle: "Gallery",
+        childlink: "/admin/gallery",
+      },
+    ],
+  },
 
-		],
-	},
+  {
+    title: "Patreon",
+    icon: "heroicons-outline:heart",
+    child: [
+      {
+        childtitle: "Dashboard",
+        childlink: "/admin/patreon",
+      },
 
+      {
+        childtitle: "Users",
+        childlink: "/admin/patreon/users",
+      },
+    ],
+  },
 
-	{
-		title: 'Application Settings',
-		icon: 'heroicons-outline:users',
-		child: [
-			{
-				childtitle: 'Application Settings',
-				childlink: '/admin/application-settings',
-			},
-		],
-	},
+  {
+    title: "SEO Analytics",
+    icon: "heroicons-outline:users",
+    child: [
+      {
+        childtitle: "SEO Analytics",
+        childlink: "https://www.semrush.com/projects/18255438/",
+      },
+    ],
+  },
 
-	{
-		title: 'Blogs',
-		icon: 'mdi:world',
-		child: [
-			{
-				childtitle: 'Blogs',
-				childlink: '/admin/blogs',
-			},
-
-		],
-	},
-
-	{
-		title: 'Supported By',
-		icon: 'mdi:world',
-		child: [
-			{
-				childtitle: 'Supported By',
-				childlink: '/admin/supported-by',
-			},
-
-		],
-	},
-
-	{
-		title: 'Innovative',
-		icon: 'mdi:world',
-		child: [
-			{
-				childtitle: 'Innovative',
-				childlink: '/admin/innovative',
-			},
-
-		],
-	},
-
-	{
-		title: 'Gallery',
-		icon: 'heroicons-outline:photograph',
-		child: [
-			{
-				childtitle: 'Gallery',
-				childlink: '/admin/gallery',
-			},
-
-		],
-	},
-
-	{
-		title: 'SketchShaper Pro',
-		icon: 'mdi:package',
-		child: [
-			{
-				childtitle: 'Categories',
-				childlink: '/admin/sketchshaper-pro-categories',
-			},
-
-			// {
-			// 	childtitle: 'Add Category',
-			// 	childlink: '/admin/sketchshaper-pro-categories/new',
-			// },
-
-			{
-				childtitle: 'Files',
-				childlink: '/admin/sketchshaper-pro-files',
-			},
-
-			// {
-			// 	childtitle: 'Upload Files',
-			// 	childlink: '/admin/sketchshaper-pro-files/new',
-			// },
-
-		],
-	},
-
-	{
-		title: 'Patreon',
-		icon: 'heroicons-outline:heart',
-		child: [
-			{
-				childtitle: 'Dashboard',
-				childlink: '/admin/patreon',
-			},
-
-			{
-				childtitle: 'Users',
-				childlink: '/admin/patreon/users',
-			},
-
-		],
-	},
-
-	{
-		title: 'SEO Analytics',
-		icon: 'heroicons-outline:users',
-		child: [
-			{
-				childtitle: 'SEO Analytics',
-				childlink: 'https://www.semrush.com/projects/18255438/',
-			},
-		],
-	},
-
-
-
-	// {
-	// 	title: 'Setting',
-	// 	icon: 'mdi:computer',
-	// 	child: [
-	// 		{
-	// 			childtitle: 'Admin User',
-	// 			childlink: '/admin/admin',
-	// 		},
-	// 		{
-	// 			childtitle: 'Application',
-	// 			childlink: '/admin/application',
-	// 		},
-	// 	],
-	// },
-
-
+  // {
+  // 	title: 'Setting',
+  // 	icon: 'mdi:computer',
+  // 	child: [
+  // 		{
+  // 			childtitle: 'Admin User',
+  // 			childlink: '/admin/admin',
+  // 		},
+  // 		{
+  // 			childtitle: 'Application',
+  // 			childlink: '/admin/application',
+  // 		},
+  // 	],
+  // },
 ];
 
 export default navMenu;

@@ -3,81 +3,78 @@ import { useState, useCallback, useMemo } from 'react';
 
 /**
  * Custom hook for Patreon admin operations
- * Provides easy access to Patreon data and mutations
+ * Provides unified access to Patreon subscriber data, analytics stats, and actions
  */
-export const usePatreon = () => {
-	const [paginationPage, setPaginationPage] = useState(1);
-	const [limit, setLimit] = useState(10);
-	const [order, setOrder] = useState('desc');
-	const [search, setSearch] = useState('');
+export const usePatreon = ({
+	initialPage = 1,
+	initialLimit = 10,
+	initialOrder = 'desc',
+	initialSearch = '',
+	initialStatus = '',
+} = {}) => {
+	const [page, setPage] = useState(initialPage);
+	const [limit, setLimit] = useState(initialLimit);
+	const [order, setOrder] = useState(initialOrder);
+	const [search, setSearch] = useState(initialSearch);
+	const [status, setStatus] = useState(initialStatus);
 
-	// Fetch users
+	// Fetch users from RTK Query
 	const { data, isLoading, isError, error, isFetching } = useGetPatreonUsersQuery({
-		page: paginationPage,
+		page,
 		limit,
 		order,
 		search,
+		status,
 	});
 
-	// Revoke user mutation
+	// Revoke user access mutation
 	const [revokeUser, { isLoading: isRevoking }] = useRevokePatreonUserMutation();
 
-	// Calculate statistics
+	// Calculate unified statistics (revenue, conversion, tier breakdown)
 	const stats = useMemo(() => {
-		if (!data?.data?.result) return null;
-
-		const users = data.data.result;
+		const users = data?.data?.result || [];
 		const activePatrons = users.filter((u) => u.is_active_patron).length;
-		const totalRevenue = users.reduce((sum, u) => sum + (u.pledge_amount_cents || 0), 0);
+		const totalRevenue = users
+			.filter((u) => u.is_active_patron)
+			.reduce((sum, u) => sum + (u.pledge_amount_cents || 0), 0);
+
+		const activeUsersList = users.filter((u) => u.is_active_patron);
+		const tierBreakdown = {
+			basic: activeUsersList.filter((u) => u.membership_tier === 'basic').length,
+			standard: activeUsersList.filter((u) => u.membership_tier === 'standard').length,
+			premium: activeUsersList.filter((u) => u.membership_tier === 'premium').length,
+		};
 
 		return {
 			totalUsers: users.length,
 			activePatrons,
 			inactivePatrons: users.length - activePatrons,
 			totalRevenue,
-			averagePledge: users.length > 0 ? totalRevenue / users.length : 0,
+			averagePledge: activePatrons > 0 ? totalRevenue / activePatrons : 0,
 			conversionRate: users.length > 0 ? (activePatrons / users.length) * 100 : 0,
-			tierBreakdown: {
-				basic: users.filter((u) => u.membership_tier === 'basic').length,
-				standard: users.filter((u) => u.membership_tier === 'standard').length,
-				premium: users.filter((u) => u.membership_tier === 'premium').length,
-			},
+			tierBreakdown,
 		};
 	}, [data]);
 
-	// Handle revoke with callback
-	const handleRevoke = useCallback(
-		async (userId, onSuccess, onError) => {
-			try {
-				await revokeUser(userId).unwrap();
-				onSuccess?.();
-			} catch (err) {
-				onError?.(err);
-			}
+	// Filter helpers
+	const filterByTier = useCallback(
+		(tier) => {
+			return data?.data?.result?.filter((u) => u.membership_tier === tier) || [];
 		},
-		[revokeUser]
+		[data]
 	);
 
-	// Filter users by tier
-	const filterByTier = useCallback((tier) => {
-		return data?.data?.result?.filter((u) => u.membership_tier === tier) || [];
-	}, [data]);
+	const filterByStatus = useCallback(
+		(isActive) => {
+			return data?.data?.result?.filter((u) => u.is_active_patron === isActive) || [];
+		},
+		[data]
+	);
 
-	// Filter users by status
-	const filterByStatus = useCallback((isActive) => {
-		return data?.data?.result?.filter((u) => u.is_active_patron === isActive) || [];
-	}, [data]);
-
-	// Search users
-	const searchUsers = useCallback((query) => {
-		setSearch(query);
-		setPaginationPage(1);
-	}, []);
-
-	// Reset filters
 	const resetFilters = useCallback(() => {
 		setSearch('');
-		setPaginationPage(1);
+		setStatus('');
+		setPage(1);
 		setLimit(10);
 		setOrder('desc');
 	}, []);
@@ -88,62 +85,31 @@ export const usePatreon = () => {
 		pagination: data?.data?.pagination,
 		stats,
 
-		// Loading states
+		// Loading & Error states
 		isLoading,
 		isError,
 		error,
 		isFetching,
 		isRevoking,
 
-		// Pagination
-		paginationPage,
-		setPaginationPage,
+		// Query Controls
+		page,
+		setPage,
 		limit,
 		setLimit,
 		order,
 		setOrder,
 		search,
 		setSearch,
+		status,
+		setStatus,
 
-		// Methods
-		handleRevoke,
+		// Actions & Utilities
+		revokeUser,
 		filterByTier,
 		filterByStatus,
-		searchUsers,
 		resetFilters,
 	};
 };
 
-/**
- * Usage Example:
- * 
- * function MyComponent() {
- *   const {
- *     users,
- *     stats,
- *     isLoading,
- *     paginationPage,
- *     setPaginationPage,
- *     handleRevoke,
- *     searchUsers,
- *   } = usePatreon();
- * 
- *   return (
- *     <div>
- *       <p>Total Users: {stats?.totalUsers}</p>
- *       <input 
- *         onChange={(e) => searchUsers(e.target.value)}
- *         placeholder="Search users..."
- *       />
- *       {users.map(user => (
- *         <div key={user.id}>
- *           {user.full_name}
- *           <button onClick={() => handleRevoke(user.id)}>
- *             Revoke
- *           </button>
- *         </div>
- *       ))}
- *     </div>
- *   );
- * }
- */
+export default usePatreon;

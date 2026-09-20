@@ -15,13 +15,9 @@ const schema = yup
 	.object({
 		email: yup
 			.string()
-			.test('email-or-phone', 'Invalid email or phone number', (value) => {
-				const isEmail = /\S+@\S+\.\S+/.test(value);
-				const isPhoneNumber = /^\d{11}$/.test(value); // Assuming a 10-digit phone number format
-				return isEmail || isPhoneNumber;
-			})
-			.required('Email or Phone number is required'),
-		password: yup.string().required('Password is Required'),
+			.email('Please enter a valid email address')
+			.required('Email is required'),
+		password: yup.string().required('Password is required'),
 	})
 	.required();
 
@@ -40,12 +36,8 @@ const LoginForm = () => {
 
 	const onSubmit = async (data) => {
 		try {
-			const isEmail = /\S+@\S+\.\S+/.test(data.email);
-			const isPhoneNumber = /^\d{11}$/.test(data.email); // Assuming a 11-digit phone number format
-
 			const requestData = {
-				...(isEmail ? { email: data.email } : {}),
-				...(isPhoneNumber ? { phone: data.email } : {}),
+				email: data.email,
 				password: data.password,
 			};
 
@@ -72,8 +64,8 @@ const LoginForm = () => {
 		>
 			<Textinput
 				name="email"
-				label="Email or Phone number"
-				type="text"
+				label="Email"
+				type="email"
 				register={register}
 				error={errors.email}
 				className="h-[48px]"
