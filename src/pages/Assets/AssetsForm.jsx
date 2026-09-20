@@ -13,14 +13,16 @@ import {
 } from "@/store/api/app/Assets/assetsApiSlice";
 import AssetsChunkedUploader from "@/utils/AssetsChunkedUploader";
 import UploadQueue from "@/utils/UploadQueue";
+import { apiSlice } from "@/store/api/apiSlice";
 
 import { useEffect, useRef, useState } from "react";
 import { useFieldArray } from "react-hook-form";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
-const AssetsForm = ({ id, data }) => {
+const AssetsForm = ({ id, data, refetch }) => {
+  const dispatch = useDispatch();
   const { isAuth, auth } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const uploadQueueRef = useRef(null);
@@ -74,6 +76,22 @@ const AssetsForm = ({ id, data }) => {
               upload.status !== "completed"
             ) {
               toast.success(`✅ ${upload.name} uploaded successfully!`);
+              dispatch(apiSlice.util.invalidateTags(["assets"]));
+              if (refetch) refetch();
+
+              if (queueItem.result?.file) {
+                setExistingFile(queueItem.result.file);
+              } else {
+                setExistingFile({
+                  main_file: upload.name,
+                  file_type: "." + upload.name.split(".").pop(),
+                  file_size: upload.size,
+                  upload_status: "completed",
+                  upload_progress: 100,
+                  uploaded_chunks: upload.totalChunks,
+                  total_chunks: upload.totalChunks,
+                });
+              }
             }
             // Show toast notification on failure
             if (queueItem.status === "failed" && upload.status !== "failed") {

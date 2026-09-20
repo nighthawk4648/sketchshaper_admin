@@ -6,7 +6,12 @@ import AssetsForm from "./AssetsForm";
 
 const AssetsEdit = () => {
   const { id } = useParams();
-  const { data, isLoading, isError, error } = useGetAssetsByIdQuery(id);
+  const { data, isLoading, isError, error, refetch } = useGetAssetsByIdQuery(
+    id,
+    {
+      refetchOnMountOrArgChange: true,
+    },
+  );
 
   if (isLoading) {
     return <SkeletionTable />;
@@ -25,7 +30,7 @@ const AssetsEdit = () => {
 
   return (
     <div>
-      <AssetsForm id={id} data={data?.data} />
+      <AssetsForm id={id} data={data?.data} refetch={refetch} />
     </div>
   );
 };

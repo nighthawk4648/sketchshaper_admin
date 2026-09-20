@@ -18,19 +18,22 @@ const Assets = () => {
 
   const [updateAssetAccessType] = useUpdateAssetAccessTypeMutation();
 
-  const { data, isLoading } = useGetAssetsByPaginationQuery({
-    page: paginationPage,
-    limit: limit,
-    order: order,
-    search: search,
-  });
+  const { data, isLoading } = useGetAssetsByPaginationQuery(
+    {
+      page: paginationPage,
+      limit: limit,
+      order: order,
+      search: search,
+    },
+    { refetchOnMountOrArgChange: true },
+  );
 
   const handleToggleAccess = async (id, currentType) => {
     const nextType = currentType === "paid" ? "free" : "paid";
     try {
       await updateAssetAccessType({ id, access_type: nextType }).unwrap();
       toast.success(
-        nextType === "paid" ? "💎 Changed to Paid" : "🟢 Changed to Free"
+        nextType === "paid" ? "💎 Changed to Paid" : "🟢 Changed to Free",
       );
     } catch (error) {
       toast.error("Failed to update access type");
@@ -76,6 +79,56 @@ const Assets = () => {
       Header: "Resolution",
       accessor: "resolution",
       Cell: (row) => <span>{row?.cell?.value}</span>,
+    },
+    {
+      Header: "Attached 3D File",
+      accessor: "file",
+      Cell: (row) => {
+        const file = row?.cell?.row?.original?.file;
+        if (!file || !file.main_file) {
+          return (
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+              ⚠️ No 3D File
+            </span>
+          );
+        }
+
+        const fileName = file.main_file.split("/").pop();
+        const formattedSize = file.file_size
+          ? `${(Number(file.file_size) / (1024 * 1024)).toFixed(1)} MB`
+          : "0 MB";
+
+        return (
+          <div className="flex flex-col gap-1 text-xs">
+            <div className="flex items-center gap-1.5">
+              <span className="px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-bold uppercase text-[10px]">
+                {file.file_type || ".skp"}
+              </span>
+              <span
+                className="font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[150px]"
+                title={fileName}
+              >
+                {fileName}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-500 text-[11px]">
+              <span>{formattedSize}</span>
+              <span>•</span>
+              <span
+                className={
+                  file.upload_status === "completed"
+                    ? "text-emerald-600 font-semibold"
+                    : "text-amber-600 font-semibold"
+                }
+              >
+                {file.upload_status === "completed"
+                  ? "✓ 100% Ready"
+                  : file.upload_status}
+              </span>
+            </div>
+          </div>
+        );
+      },
     },
     {
       Header: "Access Type",
