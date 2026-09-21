@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply h-full overflow-x-hidden dark:text-slate-300 text-slate-600 font-normal;
+    @apply min-h-screen overflow-x-hidden overflow-y-auto dark:text-slate-300 text-slate-600 font-normal;
     &.light,
     &.skin--default {
       @apply bg-slate-100;
@@ -17,9 +17,8 @@
       @apply bg-[#0f172a] text-slate-300;
     }
   }
-  html,
-  body {
-    @apply h-full;
+  html {
+    @apply min-h-screen scroll-smooth;
   }
 
   .dashcode-app-wrapper {
@@ -112,7 +111,6 @@
   @import "utility/calander";
   @import "utility/full-calender";
   @import "components/print.scss";
-
 }
 @layer utilities {
 }

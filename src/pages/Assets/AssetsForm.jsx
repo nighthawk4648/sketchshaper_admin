@@ -13,14 +13,16 @@ import {
 } from "@/store/api/app/Assets/assetsApiSlice";
 import AssetsChunkedUploader from "@/utils/AssetsChunkedUploader";
 import UploadQueue from "@/utils/UploadQueue";
+import { apiSlice } from "@/store/api/apiSlice";
 
 import { useEffect, useRef, useState } from "react";
 import { useFieldArray } from "react-hook-form";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
-const AssetsForm = ({ id, data }) => {
+const AssetsForm = ({ id, data, refetch }) => {
+  const dispatch = useDispatch();
   const { isAuth, auth } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const uploadQueueRef = useRef(null);
@@ -74,6 +76,22 @@ const AssetsForm = ({ id, data }) => {
               upload.status !== "completed"
             ) {
               toast.success(`✅ ${upload.name} uploaded successfully!`);
+              dispatch(apiSlice.util.invalidateTags(["assets"]));
+              if (refetch) refetch();
+
+              if (queueItem.result?.file) {
+                setExistingFile(queueItem.result.file);
+              } else {
+                setExistingFile({
+                  main_file: upload.name,
+                  file_type: "." + upload.name.split(".").pop(),
+                  file_size: upload.size,
+                  upload_status: "completed",
+                  upload_progress: 100,
+                  uploaded_chunks: upload.totalChunks,
+                  total_chunks: upload.totalChunks,
+                });
+              }
             }
             // Show toast notification on failure
             if (queueItem.status === "failed" && upload.status !== "failed") {
@@ -98,7 +116,7 @@ const AssetsForm = ({ id, data }) => {
     const files = Array.from(e.target.files);
 
     if (!assetId) {
-      toast.error('❌ Please create the asset first before uploading files');
+      toast.error("❌ Please create the asset first before uploading files");
       return;
     }
 
@@ -120,7 +138,12 @@ const AssetsForm = ({ id, data }) => {
                   }
                 : u,
             );
-            console.log('Progress update for', itemId, ':', progress.progress.toFixed(2) + '%');
+            console.log(
+              "Progress update for",
+              itemId,
+              ":",
+              progress.progress.toFixed(2) + "%",
+            );
             return updated;
           });
         },
@@ -239,12 +262,12 @@ const AssetsForm = ({ id, data }) => {
 
     // Step 1: Create/Update asset
     const response = await onSubmit(formData);
-    
+
     // Step 2: If asset created successfully, set the asset ID
     if (response?.id) {
       setAssetId(response.id);
       setIsAssetCreated(true);
-      toast.success('✅ Asset created successfully! Now you can upload files.');
+      toast.success("✅ Asset created successfully! Now you can upload files.");
     }
   };
 
@@ -265,7 +288,7 @@ const AssetsForm = ({ id, data }) => {
       meta_title: data?.meta_title,
       meta_description: data?.meta_description,
     });
-    
+
     // Set existing file if updating
     if (data?.file) {
       setExistingFile(data.file);
@@ -280,7 +303,7 @@ const AssetsForm = ({ id, data }) => {
             register={register}
             label="Name"
             type="text"
-            placeholder="Sub-Category Name"
+            placeholder="Asset Name"
             name="name"
             required={true}
             error={errors?.name}
@@ -363,8 +386,11 @@ const AssetsForm = ({ id, data }) => {
             {fields.map((item, index) => {
               const allImages = watch("images");
               const imageValue = allImages?.[index]?.image;
-              const selectedFile = 
-                imageValue && Array.isArray(imageValue) && imageValue.length > 0 && typeof imageValue[0] !== "string"
+              const selectedFile =
+                imageValue &&
+                Array.isArray(imageValue) &&
+                imageValue.length > 0 &&
+                typeof imageValue[0] !== "string"
                   ? imageValue[0]
                   : null;
 
@@ -401,21 +427,33 @@ const AssetsForm = ({ id, data }) => {
           {isAssetCreated && (
             <>
               <div className="border-t pt-6 mt-6">
-                <h3 className="text-lg font-semibold mb-4">Upload Asset Files</h3>
-                
+                <h3 className="text-lg font-semibold mb-4">
+                  Upload Asset Files
+                </h3>
+
                 {existingFile && (
-                  <Card title="Current File" className="mb-4 bg-green-50 border-green-200">
+                  <Card
+                    title="Current File"
+                    className="mb-4 bg-green-50 border-green-200"
+                  >
                     <div className="space-y-3">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <p className="font-medium text-sm text-gray-700">
-                            {existingFile.main_file?.split('/').pop() || 'File'}
+                            {existingFile.main_file?.split("/").pop() || "File"}
                           </p>
                           <p className="text-xs text-gray-500 mt-1">
-                            File Type: <span className="font-semibold">{existingFile.file_type}</span>
+                            File Type:{" "}
+                            <span className="font-semibold">
+                              {existingFile.file_type}
+                            </span>
                           </p>
                           <p className="text-xs text-gray-500">
-                            Chunks: <span className="font-semibold">{existingFile.uploaded_chunks}/{existingFile.total_chunks}</span>
+                            Chunks:{" "}
+                            <span className="font-semibold">
+                              {existingFile.uploaded_chunks}/
+                              {existingFile.total_chunks}
+                            </span>
                           </p>
                         </div>
                         <div className="text-right">
@@ -448,7 +486,9 @@ const AssetsForm = ({ id, data }) => {
                   />
                   <label htmlFor="asset-file-input" className="cursor-pointer">
                     <div className="text-gray-600">
-                      <p className="text-lg font-medium">Drag & Drop Files Here</p>
+                      <p className="text-lg font-medium">
+                        Drag & Drop Files Here
+                      </p>
                       <p className="text-sm">or click to select files</p>
                       <p className="text-xs text-gray-500 mt-2">
                         Upload your asset files
@@ -485,7 +525,8 @@ const AssetsForm = ({ id, data }) => {
                             </div>
                             <div className="text-right">
                               <p className="text-sm font-medium">
-                                {upload.uploadedChunks}/{upload.totalChunks} chunks
+                                {upload.uploadedChunks}/{upload.totalChunks}{" "}
+                                chunks
                               </p>
                               <p className="text-xs text-gray-500">
                                 {upload.progress.toFixed(2)}%
@@ -502,7 +543,8 @@ const AssetsForm = ({ id, data }) => {
                             </div>
                             <div className="flex justify-between items-center">
                               <span className="text-xs font-medium text-gray-600">
-                                {upload.uploadedChunks}/{upload.totalChunks} chunks
+                                {upload.uploadedChunks}/{upload.totalChunks}{" "}
+                                chunks
                               </span>
                               <span className="text-xs font-bold text-blue-600">
                                 {upload.progress.toFixed(1)}%

@@ -34,6 +34,33 @@
   height: calc(100% - 4.45rem) !important;
 }
 
+.sidebar-menu {
+  height: calc(100vh - 80px) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+
+  &::-webkit-scrollbar {
+    width: 5px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.4);
+    border-radius: 9999px;
+  }
+  &:hover::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.7);
+  }
+
+  .simplebar-content-wrapper {
+    overflow-y: auto !important;
+    padding-bottom: 5rem !important;
+  }
+}
+
 // menu link css
 .submenu_enter-active,
 .submenu_leave-active {

@@ -33,18 +33,17 @@ const SubCategoryForm = ({ id, data }) => {
     } = useSubmit(id, id ? useUpdateSubCategoryMutation : useCreateSubCategoryMutation);
 
     const handleFormSubmit = async (data) => {
-
-        // Manipulate the data as needed
         const formData = new FormData();
 
-        const keys = Object.keys(data);
+        Object.keys(data).forEach((key) => {
+            if (key === 'image') {
+                const imageValue = data[key];
+                const hasNewImage = imageValue instanceof File
+                    || imageValue instanceof Blob
+                    || (imageValue && imageValue[0] instanceof File);
 
-        keys.forEach((key) => {
-            if (['image'].includes(key)) {
-                if (data[key]) {
-                    formData.append('image', data.image[0]);
-                } else {
-                    formData.append('image', data.image);
+                if (hasNewImage) {
+                    formData.append('image', imageValue[0] || imageValue);
                 }
             } else {
                 formData.append(key, data[key]);

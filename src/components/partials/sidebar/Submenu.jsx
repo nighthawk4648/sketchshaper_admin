@@ -50,6 +50,21 @@ const Submenu = ({
                   subItem={subItem}
                 />
               </div>
+            ) : subItem.childlink?.startsWith("http://") ||
+              subItem.childlink?.startsWith("https://") ? (
+              <a
+                href={subItem.childlink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-600 dark:text-slate-300 text-sm flex space-x-3 items-center transition-all duration-150 rtl:space-x-reverse hover:text-black dark:hover:text-white"
+              >
+                <span className="h-2 w-2 rounded-full border border-slate-600 dark:border-white inline-block flex-none" />
+                <span className="flex-1">{subItem.childtitle}</span>
+                <Icon
+                  icon="heroicons:arrow-top-right-on-square"
+                  className="text-xs text-slate-400"
+                />
+              </a>
             ) : (
               <NavLink to={subItem.childlink}>
                 {({ isActive }) => (

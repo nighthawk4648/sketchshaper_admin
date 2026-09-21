@@ -17,7 +17,8 @@ export const apiSlice = createApi({
 		'blogs',
 		'supportedby',
 		'innovative',
-		'patreon'
+		'patreon',
+		'contactMessages'
 
 
 

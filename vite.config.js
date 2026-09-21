@@ -1,48 +1,35 @@
-import rollupReplace from '@rollup/plugin-replace';
-import react from '@vitejs/plugin-react';
-import path from 'path';
-import { defineConfig } from 'vite';
+import react from "@vitejs/plugin-react";
+import path from "path";
+import { defineConfig, loadEnv } from "vite";
+
 // https://vitejs.dev/config/
-export default defineConfig({
-	base: 'https://admin.sketchshaper.com',
-	resolve: {
-		alias: [
-			{
-				// "@": path.resolve(__dirname, "./src"),
-				find: '@',
-				replacement: path.resolve(__dirname, './src'),
-			},
-		],
-	},
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
 
-	
-	server: {
-		// proxy: {
-		// 	'/api': {
-		// 		target: 'http://localhost:5000',
-		// 		changeOrigin: true,
-		// 		secure: false,
-		// 	},
-		// },
+  return {
+    base:
+      process.env.NODE_ENV === "production"
+        ? "https://admin.sketchshaper.com/"
+        : "/",
+    resolve: {
+      alias: [
+        {
+          find: "@",
+          replacement: path.resolve(__dirname, "./src"),
+        },
+      ],
+    },
 
-		// FOR SERVER 
-		proxy: {
-			'/api': {
-				target: 'https://api.sketchshaper.com',
-				changeOrigin: true,
-				secure: true,
-			},
-		},
-	},
+    server: {
+      proxy: {
+        "/api": {
+          target: env.VITE_PROXY_TARGET || "https://api.sketchshaper.com",
+          changeOrigin: true,
+          secure: false,
+        },
+      },
+    },
 
-	plugins: [
-		rollupReplace({
-			preventAssignment: true,
-			values: {
-				__DEV__: JSON.stringify(true),
-				'process.env.NODE_ENV': JSON.stringify('development'),
-			},
-		}),
-		react(),
-	],
+    plugins: [react()],
+  };
 });

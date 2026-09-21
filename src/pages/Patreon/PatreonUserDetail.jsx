@@ -1,234 +1,301 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { useGetPatreonUserByIdQuery, useRevokePatreonUserMutation } from '@/store/api/app/Patreon/patreonApiSlice';
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import { Icon } from '@iconify/react';
-import { useState } from 'react';
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  useGetPatreonUserByIdQuery,
+  useRevokePatreonUserMutation,
+} from "@/store/api/app/Patreon/patreonApiSlice";
+import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
+import Icon from "@/components/ui/Icon";
+import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 
 const PatreonUserDetail = () => {
-	const { id } = useParams();
-	const navigate = useNavigate();
-	const [showConfirmRevoke, setShowConfirmRevoke] = useState(false);
+  const { id } = useParams();
+  const navigate = useNavigate();
 
-	const { data, isLoading, isError, error } = useGetPatreonUserByIdQuery(id);
-	const [revokeUser, { isLoading: isRevoking }] = useRevokePatreonUserMutation();
+  const { data, isLoading, isError, error } = useGetPatreonUserByIdQuery(id);
+  const [revokeUser, { isLoading: isRevoking }] =
+    useRevokePatreonUserMutation();
 
-	const user = data?.data;
+  const user = data?.data;
 
-	const handleRevoke = async () => {
-		try {
-			await revokeUser(id).unwrap();
-			// Show success message and redirect
-			navigate('/admin/patreon/users');
-		} catch (err) {
-			console.error('Failed to revoke user:', err);
-		}
-	};
+  const handleRevoke = () => {
+    Swal.fire({
+      title: "Revoke Patron Access?",
+      html: `Are you sure you want to revoke active patron status for <b class="text-slate-900 dark:text-white">${user?.full_name || user?.email}</b>?<br/><span class="text-xs text-red-500">The user will lose access to paid 3D downloads until they re-authenticate.</span>`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Yes, Revoke Access",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+      customClass: {
+        popup:
+          "dark:bg-slate-800 dark:text-white rounded-xl shadow-2xl border dark:border-slate-700",
+      },
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await revokeUser(id).unwrap();
+          toast.success("Patron access revoked successfully.");
+        } catch (err) {
+          toast.error(err?.data?.message || "Failed to revoke access.");
+        }
+      }
+    });
+  };
 
-	if (isLoading) {
-		return (
-			<div className="flex justify-center items-center h-96">
-				<div className="animate-spin">
-					<Icon icon="eos-icons:loading" width="48" height="48" />
-				</div>
-			</div>
-		);
-	}
+  const copyToClipboard = (text, label) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copied to clipboard!`);
+  };
 
-	if (isError) {
-		return (
-			<div className="bg-red-50 border border-red-200 rounded-lg p-4">
-				<p className="text-red-800">
-					Error loading user: {error?.data?.message || 'Unknown error'}
-				</p>
-				<Button
-					text="Back to Users"
-					onClick={() => navigate('/admin/patreon/users')}
-					className="mt-4"
-				/>
-			</div>
-		);
-	}
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary-500 border-t-transparent"></div>
+          <p className="text-sm text-slate-500">Loading user details...</p>
+        </div>
+      </div>
+    );
+  }
 
-	return (
-		<div className="space-y-6">
-			<div className="flex justify-between items-center">
-				<h1 className="text-2xl font-bold">Patreon User Details</h1>
-				<Button
-					text="Back to Users"
-					icon="heroicons:arrow-left"
-					onClick={() => navigate('/admin/patreon-users')}
-					className="btn-dark"
-				/>
-			</div>
+  if (isError || !user) {
+    return (
+      <Card className="max-w-xl mx-auto my-12 text-center p-8">
+        <Icon
+          icon="heroicons:exclamation-circle"
+          className="text-4xl text-red-500 mx-auto mb-3"
+        />
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+          User Not Found
+        </h3>
+        <p className="text-sm text-slate-500 mt-1 mb-6">
+          {error?.data?.message ||
+            "The requested Patreon subscriber could not be loaded."}
+        </p>
+        <Button
+          text="Back to Subscribers"
+          icon="heroicons:arrow-left"
+          className="btn-dark mx-auto"
+          onClick={() => navigate("/admin/patreon/users")}
+        />
+      </Card>
+    );
+  }
 
-			<Card>
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-					{/* Personal Information */}
-					<div className="space-y-4">
-						<h3 className="text-lg font-semibold mb-4">Personal Information</h3>
+  const isActive = user.is_active_patron;
+  const tierName = user.membership_tier
+    ? user.membership_tier.charAt(0).toUpperCase() +
+      user.membership_tier.slice(1)
+    : "Free";
 
-						<div>
-							<label className="text-sm text-slate-600 dark:text-slate-400">
-								Full Name
-							</label>
-							<p className="text-base font-medium">{user?.full_name}</p>
-						</div>
+  return (
+    <div className="space-y-6 max-w-5xl mx-auto">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate("/admin/patreon/users")}
+            className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+          >
+            <Icon icon="heroicons:arrow-left" className="text-xl" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+              Subscriber Details
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              ID: #{user.id} • Registered via Patreon OAuth
+            </p>
+          </div>
+        </div>
 
-						<div>
-							<label className="text-sm text-slate-600 dark:text-slate-400">
-								Email
-							</label>
-							<p className="text-base font-medium">{user?.email}</p>
-						</div>
+        <div className="flex items-center gap-2">
+          <a
+            href={`mailto:${user.email}?subject=Message%20from%20SketchShaper`}
+            className="btn btn-outline-dark btn-sm flex items-center gap-1.5 py-2 px-3 rounded-lg text-xs"
+          >
+            <Icon icon="heroicons:envelope" /> Email User
+          </a>
+          {isActive && (
+            <Button
+              text="Revoke Access"
+              icon="heroicons:no-symbol"
+              className="btn-danger btn-sm"
+              disabled={isRevoking}
+              onClick={handleRevoke}
+            />
+          )}
+        </div>
+      </div>
 
-						<div>
-							<label className="text-sm text-slate-600 dark:text-slate-400">
-								Patreon ID
-							</label>
-							<p className="text-base font-medium text-slate-500">{user?.patreon_id}</p>
-						</div>
-					</div>
+      {/* Main Profile Card */}
+      <Card className="shadow-lg">
+        {/* Top Profile Banner */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700 mb-6">
+          <div className="flex items-center gap-4">
+            <div
+              className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold text-white shadow-md ${
+                isActive
+                  ? "bg-gradient-to-br from-emerald-500 to-teal-600"
+                  : "bg-slate-400"
+              }`}
+            >
+              {user.full_name?.[0]?.toUpperCase() ||
+                user.email?.[0]?.toUpperCase() ||
+                "?"}
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                {user.full_name || "Anonymous Patron"}
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                {user.email}
+              </p>
+            </div>
+          </div>
 
-					{/* Subscription Information */}
-					<div className="space-y-4">
-						<h3 className="text-lg font-semibold mb-4">Subscription Information</h3>
+          <div className="flex flex-col sm:items-end gap-2">
+            {isActive ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>{" "}
+                Active Patron
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
+                <span className="w-2 h-2 rounded-full bg-red-400"></span>{" "}
+                Inactive Access
+              </span>
+            )}
+            <span className="text-xs font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 px-2.5 py-0.5 rounded-md border border-purple-200 dark:border-purple-800">
+              💎 {tierName} Tier
+            </span>
+          </div>
+        </div>
 
-						<div>
-							<label className="text-sm text-slate-600 dark:text-slate-400">
-								Membership Tier
-							</label>
-							<div className="mt-1">
-								<span
-									className={`px-3 py-1 rounded-full text-sm font-medium ${
-										user?.membership_tier === 'premium'
-											? 'bg-purple-100 text-purple-800'
-											: user?.membership_tier === 'standard'
-											? 'bg-blue-100 text-blue-800'
-											: 'bg-gray-100 text-gray-800'
-									}`}
-								>
-									{user?.membership_tier?.charAt(0).toUpperCase() +
-										user?.membership_tier?.slice(1)}
-								</span>
-							</div>
-						</div>
+        {/* Detailed Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Account & Patreon Info */}
+          <div className="space-y-4 p-5 rounded-xl border border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-900/40">
+            <h4 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+              <Icon icon="heroicons:identification" /> Patreon Profile Info
+            </h4>
 
-						<div>
-							<label className="text-sm text-slate-600 dark:text-slate-400">
-								Pledge Amount
-							</label>
-							<p className="text-base font-medium">
-								${(user?.pledge_amount_cents / 100).toFixed(2)}/month
-							</p>
-						</div>
+            <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800 text-sm">
+              <span className="text-slate-500 dark:text-slate-400">
+                Full Name
+              </span>
+              <span className="font-semibold text-slate-800 dark:text-white">
+                {user.full_name || "—"}
+              </span>
+            </div>
 
-						<div>
-							<label className="text-sm text-slate-600 dark:text-slate-400">
-								Active Patron
-							</label>
-							<div className="mt-1">
-								<span
-									className={`px-3 py-1 rounded-full text-sm font-medium ${
-										user?.is_active_patron
-											? 'bg-green-100 text-green-800'
-											: 'bg-red-100 text-red-800'
-									}`}
-								>
-									{user?.is_active_patron ? 'Yes' : 'No'}
-								</span>
-							</div>
-						</div>
-					</div>
+            <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800 text-sm">
+              <span className="text-slate-500 dark:text-slate-400">
+                Email Address
+              </span>
+              <button
+                onClick={() => copyToClipboard(user.email, "Email")}
+                className="font-semibold text-primary-500 hover:underline flex items-center gap-1"
+              >
+                {user.email}{" "}
+                <Icon icon="heroicons:document-duplicate" className="text-xs" />
+              </button>
+            </div>
 
-					{/* Dates */}
-					<div className="space-y-4">
-						<h3 className="text-lg font-semibold mb-4">Timeline</h3>
+            <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800 text-sm">
+              <span className="text-slate-500 dark:text-slate-400">
+                Patreon User ID
+              </span>
+              <button
+                onClick={() => copyToClipboard(user.patreon_id, "Patreon ID")}
+                className="font-mono text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded flex items-center gap-1"
+              >
+                {user.patreon_id}{" "}
+                <Icon icon="heroicons:document-duplicate" className="text-xs" />
+              </button>
+            </div>
 
-						<div>
-							<label className="text-sm text-slate-600 dark:text-slate-400">
-								Joined Date
-							</label>
-							<p className="text-base font-medium">
-								{new Date(user?.created_at).toLocaleDateString('en-US', {
-									year: 'numeric',
-									month: 'long',
-									day: 'numeric',
-									hour: '2-digit',
-									minute: '2-digit',
-								})}
-							</p>
-						</div>
+            <div className="flex justify-between items-center py-2 text-sm">
+              <span className="text-slate-500 dark:text-slate-400">
+                Monthly Pledge
+              </span>
+              <span className="font-bold text-emerald-600 dark:text-emerald-400 text-base">
+                $
+                {(user.pledge_amount_cents
+                  ? user.pledge_amount_cents / 100
+                  : 0
+                ).toFixed(2)}
+                /mo
+              </span>
+            </div>
+          </div>
 
-						<div>
-							<label className="text-sm text-slate-600 dark:text-slate-400">
-								Last Verified
-							</label>
-							<p className="text-base font-medium">
-								{new Date(user?.last_verified_at).toLocaleDateString('en-US', {
-									year: 'numeric',
-									month: 'long',
-									day: 'numeric',
-									hour: '2-digit',
-									minute: '2-digit',
-								})}
-							</p>
-						</div>
+          {/* Timeline & Verification */}
+          <div className="space-y-4 p-5 rounded-xl border border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-900/40">
+            <h4 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+              <Icon icon="heroicons:clock" /> Activity & Timeline
+            </h4>
 
-						<div>
-							<label className="text-sm text-slate-600 dark:text-slate-400">
-								Last Updated
-							</label>
-							<p className="text-base font-medium">
-								{new Date(user?.updated_at).toLocaleDateString('en-US', {
-									year: 'numeric',
-									month: 'long',
-									day: 'numeric',
-									hour: '2-digit',
-									minute: '2-digit',
-								})}
-							</p>
-						</div>
-					</div>
+            <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800 text-sm">
+              <span className="text-slate-500 dark:text-slate-400">
+                Initial Registration
+              </span>
+              <span className="font-medium text-slate-700 dark:text-slate-300">
+                {user.created_at
+                  ? new Date(user.created_at).toLocaleString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "—"}
+              </span>
+            </div>
 
-					{/* Actions */}
-					<div className="space-y-4">
-						<h3 className="text-lg font-semibold mb-4">Actions</h3>
+            <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800 text-sm">
+              <span className="text-slate-500 dark:text-slate-400">
+                Last Verified by Patreon
+              </span>
+              <span className="font-medium text-slate-700 dark:text-slate-300">
+                {user.last_verified_at
+                  ? new Date(user.last_verified_at).toLocaleString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "—"}
+              </span>
+            </div>
 
-						{!showConfirmRevoke ? (
-							<Button
-								text="Revoke Access"
-								icon="heroicons:trash"
-								onClick={() => setShowConfirmRevoke(true)}
-								className="btn-danger w-full"
-							/>
-						) : (
-							<div className="space-y-3 bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-800">
-								<p className="text-sm text-red-800 dark:text-red-200">
-									Are you sure you want to revoke access for this user? This action cannot be
-									undone.
-								</p>
-								<div className="flex gap-2">
-									<Button
-										text="Confirm Revoke"
-										onClick={handleRevoke}
-										disabled={isRevoking}
-										className="btn-danger flex-1"
-									/>
-									<Button
-										text="Cancel"
-										onClick={() => setShowConfirmRevoke(false)}
-										disabled={isRevoking}
-										className="btn-secondary flex-1"
-									/>
-								</div>
-							</div>
-						)}
-					</div>
-				</div>
-			</Card>
-		</div>
-	);
+            <div className="flex justify-between items-center py-2 text-sm">
+              <span className="text-slate-500 dark:text-slate-400">
+                Download Eligibility
+              </span>
+              <span
+                className={`font-semibold text-xs px-2.5 py-1 rounded-full ${
+                  isActive
+                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    : "bg-red-500/10 text-red-600 dark:text-red-400"
+                }`}
+              >
+                {isActive
+                  ? "✅ Eligible for Pro Downloads"
+                  : "❌ Subscription Inactive"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
 };
 
 export default PatreonUserDetail;
