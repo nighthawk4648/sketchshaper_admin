@@ -47,3 +47,4 @@ README.txt
 *.tsbuildinfo
 
 /public/*
+!/public/robots.txt
