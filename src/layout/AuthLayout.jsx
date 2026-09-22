@@ -3,26 +3,29 @@ import { Suspense, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
+import { logOut } from '@/store/api/auth/authSlice';
 
 const AuthLayout = () => {
-	const { isAuth, auth } = useSelector((state) => state.auth);
-
-	console.log(isAuth, auth);
+	const { isAuth } = useSelector((state) => state.auth);
 	const dispatch = useDispatch();
 	const navigate = useNavigate();
 
 	useEffect(() => {
 		if (!isAuth) {
-			navigate('/login');
-			dispatch({ type: 'LOGOUT' });
+			dispatch(logOut());
+			navigate('/login', { replace: true });
 		}
-	}, [isAuth, navigate]);
+	}, [isAuth, dispatch, navigate]);
+
+	if (!isAuth) {
+		return null;
+	}
 
 	return (
 		<>
 			<Suspense fallback={<Loading />}>
 				<ToastContainer />
-				{<Outlet />}
+				<Outlet />
 			</Suspense>
 		</>
 	);

@@ -50,13 +50,21 @@ const ApplicationSettings = ({ id }) => {
 
 		keys.forEach((key) => {
 			if (['site_logo', 'site_favicon'].includes(key)) {
-				if (data[key]) {
-					formData.append(key, data[key][0]);
-				} else {
-					formData.append(key, data[key]);
+				const fileValue = data[key];
+				const hasNewFile =
+					fileValue instanceof File ||
+					fileValue instanceof Blob ||
+					(fileValue && fileValue[0] instanceof File);
+
+				if (hasNewFile) {
+					formData.append(key, fileValue[0] || fileValue);
+				} else if (typeof fileValue === 'string' && fileValue.trim() !== '') {
+					formData.append(key, fileValue);
 				}
 			} else {
-				formData.append(key, data[key]);
+				if (data[key] !== undefined && data[key] !== null) {
+					formData.append(key, data[key]);
+				}
 			}
 		});
 

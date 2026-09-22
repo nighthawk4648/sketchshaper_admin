@@ -76,33 +76,23 @@ const ContactMessages = lazy(() => import("@/pages/Contact/ContactMessages"));
 
 const router = createBrowserRouter([
   {
+    path: "/login",
+    element: <Login />,
+  },
+  {
     path: "",
-    // errorElement: <Error />,
-
+    element: <AuthLayout />,
     children: [
       {
         path: "",
-        element: <AuthLayout />,
+        element: <Layout />,
         children: [
-          // add your routes here
           {
             path: "",
-            element: <Layout />,
-            children: [
-              {
-                path: "",
-                element: <Dashboard />,
-              },
-            ],
-          },
-          {
-            path: "login",
-            element: <Login />,
+            element: <Dashboard />,
           },
         ],
       },
-
-      // Don't use down below
       {
         path: "admin",
         element: <Layout type="admin" />,

@@ -17,43 +17,38 @@ const useDelete = () => {
   const { pathname } = useLocation();
   const pathArray = pathname.split("/");
 
-  let hook = null;
+  const [deleteSlider] = useDeleteSliderMutation();
+  const [deleteCategory] = useDeleteCategoryMutation();
+  const [deleteSubCategory] = useDeleteSubCategoryMutation();
+  const [deleteFooterPage] = useDeleteFooterPageMutation();
+  const [deleteAssets] = useDeleteAssetsMutation();
+  const [deleteSocial] = useDeleteSocialMutation();
+  const [deleteBlogs] = useDeleteBlogsMutation();
+  const [deleteSupportedBy] = useDeleteSupportedbyMutation();
+  const [deleteInnovative] = useDeleteInnovativeMutation();
+  const [deleteGallery] = useDeleteGalleryMutation();
 
-  if (pathArray.includes("slider")) {
-    hook = useDeleteSliderMutation;
-  } else if (pathArray.includes("category")) {
-    hook = useDeleteCategoryMutation;
-  } else if (pathArray.includes("sub-category")) {
-    hook = useDeleteSubCategoryMutation;
-  } else if (pathArray.includes("footer-page")) {
-    hook = useDeleteFooterPageMutation;
-  } else if (pathArray.includes("assets")) {
-    hook = useDeleteAssetsMutation;
-  } else if (pathArray.includes("social")) {
-    hook = useDeleteSocialMutation;
-  } else if (pathArray.includes("blogs")) {
-    hook = useDeleteBlogsMutation;
-  } else if (pathArray.includes("supported-by")) {
-    hook = useDeleteSupportedbyMutation;
-  } else if (pathArray.includes("innovative")) {
-    hook = useDeleteInnovativeMutation;
-  } else if (pathArray.includes("gallery")) {
-    hook = useDeleteGalleryMutation;
-  }
-
-  const [deleteRecord, { isLoading, isError, error, isSuccess }] = hook
-    ? hook()
-    : [
-        () => {},
-        {
-          isLoading: false,
-          isError: false,
-          error: null,
-          isSuccess: false,
-        },
-      ];
+  const getDeleteMutation = () => {
+    if (pathArray.includes("slider")) return deleteSlider;
+    if (pathArray.includes("category")) return deleteCategory;
+    if (pathArray.includes("sub-category")) return deleteSubCategory;
+    if (pathArray.includes("footer-page")) return deleteFooterPage;
+    if (pathArray.includes("assets")) return deleteAssets;
+    if (pathArray.includes("social")) return deleteSocial;
+    if (pathArray.includes("blogs")) return deleteBlogs;
+    if (pathArray.includes("supported-by")) return deleteSupportedBy;
+    if (pathArray.includes("innovative")) return deleteInnovative;
+    if (pathArray.includes("gallery")) return deleteGallery;
+    return null;
+  };
 
   const handleDelete = async (id) => {
+    const deleteMutation = getDeleteMutation();
+    if (!deleteMutation) {
+      console.warn("No delete mutation found for current route:", pathname);
+      return;
+    }
+
     withReactContent(Swal)
       .fire({
         title: "Are you sure?",
@@ -65,18 +60,12 @@ const useDelete = () => {
       })
       .then(async (result) => {
         if (result.isConfirmed) {
-          // Delete the record
           try {
-            await deleteRecord(id);
-
-            if (isError) {
-              throw new Error(error?.message || "Something went wrong!");
-            }
-
+            await deleteMutation(id).unwrap();
             Swal.fire("Deleted!", "Your record has been deleted.", "success");
           } catch (error) {
-            console.log(error);
-            Swal.fire("Failed!", "Failed to delete the record.", "error");
+            console.error("Delete failed:", error);
+            Swal.fire("Failed!", error?.data?.message || "Failed to delete the record.", "error");
           }
         }
       });

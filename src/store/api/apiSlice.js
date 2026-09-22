@@ -5,6 +5,7 @@ import Cookies from 'js-cookie';
 export const apiSlice = createApi({
 	reducerPath: 'api',
 	tagTypes: [
+		'AdminUser',
 		'Slider',
 		'category',
 		'subCategories',
@@ -18,28 +19,23 @@ export const apiSlice = createApi({
 		'supportedby',
 		'innovative',
 		'patreon',
-		'contactMessages'
-
-
-
+		'contactMessages',
 	],
 	baseQuery: fetchBaseQuery({
 		baseUrl: envConfig.apiUrl,
 		prepareHeaders: (headers, { getState }) => {
-			// Try to get token from Redux state first
 			const { auth } = getState().auth;
 			let token = auth?.token;
 
-			// If not in Redux state, try to get from cookies
 			if (!token) {
 				token = Cookies.get('token');
 			}
 
-			// If token exists, add it to headers
 			if (token) {
 				headers.set('Authorization', `Bearer ${token}`);
 			}
+			return headers;
 		},
 	}),
-	endpoints: (builder) => ({}),
+	endpoints: () => ({}),
 });

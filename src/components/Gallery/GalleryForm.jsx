@@ -36,13 +36,21 @@ const GalleryForm = ({ id, data }) => {
 
 		keys.forEach((key) => {
 			if (['image'].includes(key)) {
-				if (data[key]) {
-					formData.append('image', data.image[0]);
-				} else {
-					formData.append('image', data.image);
+				const fileValue = data[key];
+				const hasNewFile =
+					fileValue instanceof File ||
+					fileValue instanceof Blob ||
+					(fileValue && fileValue[0] instanceof File);
+
+				if (hasNewFile) {
+					formData.append(key, fileValue[0] || fileValue);
+				} else if (typeof fileValue === 'string' && fileValue.trim() !== '') {
+					formData.append(key, fileValue);
 				}
 			} else {
-				formData.append(key, data[key]);
+				if (data[key] !== undefined && data[key] !== null) {
+					formData.append(key, data[key]);
+				}
 			}
 		});
 
@@ -50,10 +58,12 @@ const GalleryForm = ({ id, data }) => {
 	};
 
 	useEffect(() => {
-		reset({
-			// Reset with existing data if editing
-		});
-	}, [data]);
+		if (data) {
+			reset({
+				image: data?.image,
+			});
+		}
+	}, [data, reset]);
 
 	return (
 		<form onSubmit={handleSubmit(handleFormSubmit)}>

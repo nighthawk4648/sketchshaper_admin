@@ -10,25 +10,22 @@ import { logOut } from "@/store/api/auth/authSlice";
 import { useSelector } from "react-redux";
 
 const profileLabel = (auth) => {
-  console.log("auth,", auth);
+  const email = auth?.email || "Admin";
+  const initial = (email[0] || "A").toUpperCase();
+
   return (
     <div className="flex items-center">
       <div className="flex-1 ltr:mr-[10px] rtl:ml-[10px]">
-        <div className="lg:h-8 lg:w-8 h-7 w-7 rounded-full">
-          <img
-            src={
-              auth?.user?.user_info?.image
-                ? envConfig.apiUrl + auth?.user?.user_info?.image
-                : UserAvatar
-            }
-            alt=""
-            className="block w-full h-full object-cover rounded-full"
-          />
+        <div className="lg:h-8 lg:w-8 h-7 w-7 rounded-full bg-slate-900 dark:bg-slate-700 text-white font-bold flex items-center justify-center text-sm shadow-sm border border-slate-300 dark:border-slate-600">
+          {initial}
         </div>
       </div>
       <div className="flex-none text-slate-600 dark:text-white text-sm font-normal items-center lg:flex hidden overflow-hidden text-ellipsis whitespace-nowrap">
-        <span className="overflow-hidden text-ellipsis whitespace-nowrap w-[85px] block">
-          {auth?.user?.user_info?.name}
+        <span
+          className="overflow-hidden text-ellipsis whitespace-nowrap max-w-[140px] block font-medium"
+          title={email}
+        >
+          {email}
         </span>
         <span className="text-base inline-block ltr:ml-[10px] rtl:mr-[10px]">
           <Icon icon="heroicons-outline:chevron-down"></Icon>

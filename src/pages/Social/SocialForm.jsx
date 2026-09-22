@@ -38,13 +38,21 @@ const SocialForm = ({ id, data }) => {
 
 		keys.forEach((key) => {
 			if (['icon'].includes(key)) {
-				if (data[key]) {
-					formData.append('icon', data.icon[0]);
-				} else {
-					formData.append('icon', data.icon);
+				const fileValue = data[key];
+				const hasNewFile =
+					fileValue instanceof File ||
+					fileValue instanceof Blob ||
+					(fileValue && fileValue[0] instanceof File);
+
+				if (hasNewFile) {
+					formData.append('icon', fileValue[0] || fileValue);
+				} else if (typeof fileValue === 'string' && fileValue.trim() !== '') {
+					formData.append('icon', fileValue);
 				}
 			} else {
-				formData.append(key, data[key]);
+				if (data[key] !== undefined && data[key] !== null) {
+					formData.append(key, data[key]);
+				}
 			}
 		});
 

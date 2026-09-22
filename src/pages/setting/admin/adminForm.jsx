@@ -38,19 +38,30 @@ const AdminForm = ({ id, data }) => {
 
 		keys.forEach((key) => {
 			if (['photo'].includes(key)) {
-				if (data[key]) {
-					formData.append('photo', data.photo[0]);
-				} else {
-					formData.append('photo', data.photo);
+				const fileValue = data[key];
+				const hasNewFile =
+					fileValue instanceof File ||
+					fileValue instanceof Blob ||
+					(fileValue && fileValue[0] instanceof File);
+
+				if (hasNewFile) {
+					formData.append('photo', fileValue[0] || fileValue);
+				} else if (typeof fileValue === 'string' && fileValue.trim() !== '') {
+					formData.append('photo', fileValue);
 				}
 			} else {
-				formData.append(key, data[key]);
+				if (data[key] !== undefined && data[key] !== null) {
+					formData.append(key, data[key]);
+				}
 			}
 		});
 
-		id
-			? formData.append('updated_admin_id', auth?.user?.user_info?.id)
-			: formData.append('created_admin_id', auth?.user?.user_info?.id);
+		const adminId = auth?.id || auth?.user?.user_info?.id || '';
+		if (adminId) {
+			id
+				? formData.append('updated_admin_id', adminId)
+				: formData.append('created_admin_id', adminId);
+		}
 
 		await onSubmit(formData);
 	};

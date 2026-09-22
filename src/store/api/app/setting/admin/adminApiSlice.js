@@ -3,35 +3,24 @@ import { apiSlice } from '@/store/api/apiSlice';
 export const adminApi = apiSlice.injectEndpoints({
 	endpoints: (builder) => ({
 		getAdminUsers: builder.query({
-			query: () => 'admin',
+			query: () => 'admins',
 			providesTags: ['AdminUser'],
 		}),
 
 		getAdminUsersByPagination: builder.query({
-			query: ({ page = 1, limit = 10, order = 'desc', search = '' }) =>
-				`admin/find/pages?page=${page}&limit=${limit}&order=${order}&search=${search}`,
-			providesTags: ['AdminUser'],
-		}),
-
-		getAdminDashboardChart: builder.query({
-			query: ({ duration = "this-month" }) =>
-				`report/parcel?duration=${duration}`,
-			providesTags: ['AdminUser'],
-		}),
-
-		getAdminOverview: builder.query({
-			query: () => `report/admin/overview`,
+			query: ({ page = 1, limit = 10, order = 'desc', search = '' } = {}) =>
+				`admins?page=${page}&limit=${limit}&order=${order}&search=${search}`,
 			providesTags: ['AdminUser'],
 		}),
 
 		getAdminUserById: builder.query({
-			query: (id) => `admin/${id}`,
+			query: (id) => `admins/${id}`,
 			providesTags: ['AdminUser'],
 		}),
 
 		createAdminUser: builder.mutation({
 			query: (data) => ({
-				url: 'admin',
+				url: 'admins',
 				method: 'POST',
 				body: data,
 			}),
@@ -40,7 +29,7 @@ export const adminApi = apiSlice.injectEndpoints({
 
 		updateAdminUser: builder.mutation({
 			query: ({ id, data }) => ({
-				url: `admin/${id}`,
+				url: `admins/${id}`,
 				method: 'PUT',
 				body: data,
 			}),
@@ -49,7 +38,7 @@ export const adminApi = apiSlice.injectEndpoints({
 
 		deleteAdminUser: builder.mutation({
 			query: (id) => ({
-				url: `admin/${id}`,
+				url: `admins/${id}`,
 				method: 'DELETE',
 			}),
 			invalidatesTags: ['AdminUser'],
@@ -60,8 +49,6 @@ export const adminApi = apiSlice.injectEndpoints({
 export const {
 	useGetAdminUsersQuery,
 	useGetAdminUsersByPaginationQuery,
-	useGetAdminDashboardChartQuery,
-	useGetAdminOverviewQuery,
 	useGetAdminUserByIdQuery,
 	useCreateAdminUserMutation,
 	useUpdateAdminUserMutation,

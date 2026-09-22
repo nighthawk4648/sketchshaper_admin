@@ -1,4 +1,5 @@
 import axios from 'axios';
+import Cookies from 'js-cookie';
 
 class AssetsChunkedUploader {
 	constructor(file, onProgress, apiBaseUrl = '', assetId = null) {
@@ -11,8 +12,17 @@ class AssetsChunkedUploader {
 		this.isPaused = false;
 		this.isCancelled = false;
 		this.uploadedChunks = new Set();
-		this.apiBaseUrl = apiBaseUrl;
+		this.apiBaseUrl = (apiBaseUrl || '').replace(/\/+$/, '');
 		this.assetId = assetId;
+	}
+
+	getHeaders(extraHeaders = {}) {
+		const token = Cookies.get('token');
+		const headers = { ...extraHeaders };
+		if (token) {
+			headers['Authorization'] = `Bearer ${token}`;
+		}
+		return headers;
 	}
 
 	async initialize() {
@@ -31,6 +41,9 @@ class AssetsChunkedUploader {
 					totalChunks: this.totalChunks,
 					totalSize: this.file.size,
 					originalFilename: this.file.name,
+				},
+				{
+					headers: this.getHeaders(),
 				}
 			);
 
@@ -38,7 +51,7 @@ class AssetsChunkedUploader {
 			console.log('Response status:', response.status);
 			console.log('Response data:', response.data);
 			console.log('Response data.data:', response.data.data);
-			
+
 			if (!response.data.data) {
 				console.error('No data in response!');
 				return false;
@@ -46,18 +59,18 @@ class AssetsChunkedUploader {
 
 			this.uploadSessionId = response.data.data.uploadSessionId;
 			this.fileId = response.data.data.fileId;
-			
+
 			if (!this.uploadSessionId || !this.fileId) {
 				console.error('Missing uploadSessionId or fileId:', {
 					uploadSessionId: this.uploadSessionId,
-					fileId: this.fileId
+					fileId: this.fileId,
 				});
 				return false;
 			}
-			
+
 			console.log('Asset upload initialized successfully:', {
 				uploadSessionId: this.uploadSessionId,
-				fileId: this.fileId
+				fileId: this.fileId,
 			});
 			return true;
 		} catch (error) {
@@ -83,7 +96,7 @@ class AssetsChunkedUploader {
 				`${this.apiBaseUrl}/assets/upload-chunk`,
 				formData,
 				{
-					headers: { 'Content-Type': 'multipart/form-data' },
+					headers: this.getHeaders({ 'Content-Type': 'multipart/form-data' }),
 				}
 			);
 
@@ -151,6 +164,9 @@ class AssetsChunkedUploader {
 					uploadSessionId: this.uploadSessionId,
 					fileId: this.fileId,
 					originalFilename: this.file.name,
+				},
+				{
+					headers: this.getHeaders(),
 				}
 			);
 
@@ -165,7 +181,10 @@ class AssetsChunkedUploader {
 		try {
 			// Get upload status
 			const response = await axios.get(
-				`${this.apiBaseUrl}/assets/status/${this.uploadSessionId}`
+				`${this.apiBaseUrl}/assets/status/${this.uploadSessionId}`,
+				{
+					headers: this.getHeaders(),
+				}
 			);
 			const { uploadedChunksList } = response.data.data;
 
@@ -189,7 +208,10 @@ class AssetsChunkedUploader {
 		this.isCancelled = true;
 		try {
 			await axios.delete(
-				`${this.apiBaseUrl}/assets/cancel/${this.uploadSessionId}`
+				`${this.apiBaseUrl}/assets/cancel/${this.uploadSessionId}`,
+				{
+					headers: this.getHeaders(),
+				}
 			);
 		} catch (error) {
 			console.error('Failed to cancel asset upload:', error);

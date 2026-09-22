@@ -245,18 +245,34 @@ const AssetsForm = ({ id, data, refetch }) => {
 
     keys.forEach((key) => {
       if (["cover"].includes(key)) {
-        if (data[key]) {
-          formData.append(key, data[key][0]);
+        const coverValue = data[key];
+        const hasNewCover =
+          coverValue instanceof File ||
+          coverValue instanceof Blob ||
+          (coverValue && coverValue[0] instanceof File);
+
+        if (hasNewCover) {
+          formData.append(key, coverValue[0] || coverValue);
+        } else if (typeof coverValue === "string" && coverValue.trim() !== "") {
+          formData.append(key, coverValue);
         }
       } else if (key === "images") {
-        data[key].forEach((image) => {
-          console.log("image", image.image);
-          if (image.image?.[0]) {
-            formData.append("images", image.image[0]);
-          }
-        });
+        if (Array.isArray(data[key])) {
+          data[key].forEach((image) => {
+            const imgVal = image?.image;
+            const hasNewImg =
+              imgVal instanceof File ||
+              imgVal instanceof Blob ||
+              (imgVal && imgVal[0] instanceof File);
+            if (hasNewImg) {
+              formData.append("images", imgVal[0] || imgVal);
+            }
+          });
+        }
       } else {
-        formData.append(key, data[key]);
+        if (data[key] !== undefined && data[key] !== null) {
+          formData.append(key, data[key]);
+        }
       }
     });
 
