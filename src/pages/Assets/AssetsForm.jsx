@@ -3,7 +3,6 @@ import TextEditor from "@/components/shared/Select/TextEditor";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Fileinput from "@/components/ui/Fileinput";
-import Textarea from "@/components/ui/Textarea";
 import Textinput from "@/components/ui/Textinput";
 import envConfig from "@/configs/envConfig";
 import useSubmit from "@/hooks/useSubmit";
@@ -276,7 +275,10 @@ const AssetsForm = ({ id, data, refetch }) => {
 
     // Always append size: auto-computed from file if selected, otherwise empty string
     // (backend will overwrite with actual size after upload completes)
-    formData.append("size", selectedModelFile ? formatBytes(selectedModelFile.size) : "");
+    formData.append(
+      "size",
+      selectedModelFile ? formatBytes(selectedModelFile.size) : "",
+    );
 
     // Step 1: Create / Update asset record
     const createdAsset = await onSubmit(formData);
@@ -351,16 +353,15 @@ const AssetsForm = ({ id, data, refetch }) => {
             error={errors?.resolution}
           />
 
-          <Textarea
-            name="short_description"
-            register={register}
-            label="Short Description"
-            type="textarea"
-            placeholder="Short Description"
-            row={6}
-            required={true}
-            error={errors?.short_description}
-          />
+          <div>
+            <p className="mb-2 text-sm font-semibold">Short Description</p>
+            <TextEditor
+              name="short_description"
+              errors={errors}
+              control={control}
+              required={false}
+            />
+          </div>
 
           <Fileinput
             selectedFile={watch("cover")?.[0]}
