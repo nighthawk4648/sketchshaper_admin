@@ -8,9 +8,6 @@ const Admin = lazy(() => import("@/pages/setting/admin/admin"));
 const AdminAdd = lazy(() => import("@/pages/setting/admin/adminAdd"));
 const AdminView = lazy(() => import("@/pages/setting/admin/adminView"));
 const AdminEdit = lazy(() => import("@/pages/setting/admin/adminEdit"));
-const Application = lazy(
-  () => import("@/pages/setting/application/application"),
-);
 const Login = lazy(() => import("@/pages/auth/login"));
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 
