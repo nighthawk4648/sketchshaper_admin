@@ -9,20 +9,20 @@ const {
 
 // Normalize URLs to avoid trailing slashes causing double-slash issues (e.g. /api//assets)
 const normalizeApiUrl = (url) => {
-  if (!url) return '';
-  return url.replace(/\/+$/, '');
+  if (!url) return "";
+  return url.replace(/\/+$/, "");
 };
 
 const normalizeImgUrl = (url) => {
-  if (!url) return '';
-  return url.endsWith('/') ? url : `${url}/`;
+  if (!url) return "";
+  return url.endsWith("/") ? url : `${url}/`;
 };
 
-const defaultDevApi = 'http://localhost:5000/api';
-const defaultProdApi = 'https://api.sketchshaper.com/api';
+const defaultDevApi = "http://localhost:5000/api";
+const defaultProdApi = "https://api.sketchshaper.com/api";
 
-const defaultDevImg = 'http://localhost:5000/api/uploads/';
-const defaultProdImg = 'https://api.sketchshaper.com/api/uploads/';
+const defaultDevImg = "http://localhost:5000/api/uploads/";
+const defaultProdImg = "https://api.sketchshaper.com/api/uploads/";
 
 const rawApiUrl =
   VITE_API_URL ||

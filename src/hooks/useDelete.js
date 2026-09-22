@@ -65,7 +65,11 @@ const useDelete = () => {
             Swal.fire("Deleted!", "Your record has been deleted.", "success");
           } catch (error) {
             console.error("Delete failed:", error);
-            Swal.fire("Failed!", error?.data?.message || "Failed to delete the record.", "error");
+            Swal.fire(
+              "Failed!",
+              error?.data?.message || "Failed to delete the record.",
+              "error",
+            );
           }
         }
       });
