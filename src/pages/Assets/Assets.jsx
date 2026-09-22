@@ -73,7 +73,9 @@ const Assets = () => {
     {
       Header: "Size",
       accessor: "size",
-      Cell: (row) => <span>{row?.cell?.value}</span>,
+      Cell: (row) => (
+        <span>{row?.cell?.value || "—"}</span>
+      ),
     },
     {
       Header: "Resolution",

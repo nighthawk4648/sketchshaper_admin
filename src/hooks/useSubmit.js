@@ -31,9 +31,11 @@ const useSubmit = (id, hook, redirect) => {
 				navigate(redirect ? redirect : -1);
 			}
 			toast.success(data?.message);
+			return data?.data; // return created/updated entity so callers can chain actions
 		} catch (error) {
 			console.log(error);
 			toast.error(error.message || 'Something went wrong!');
+			return null; // explicit null on failure
 		}
 	};
 
