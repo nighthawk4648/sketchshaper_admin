@@ -15,7 +15,6 @@ import { motion } from "framer-motion";
 import { Suspense, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Outlet, useNavigate } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
 import MobileMenu from "../components/partials/sidebar/MobileMenu";
 
 const Layout = ({ type }) => {
@@ -50,7 +49,6 @@ const Layout = ({ type }) => {
 
   return (
     <>
-      <ToastContainer />
       <Header className={width > breakpoints.xl ? switchHeaderClass() : ""} />
       {menuType === "vertical" && width > breakpoints.xl && !menuHidden && (
         <Sidebar />

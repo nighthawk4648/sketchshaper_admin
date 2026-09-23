@@ -1,10 +1,12 @@
 import { Suspense } from "react";
 import { RouterProvider } from "react-router-dom";
 import router from "./routers";
+import { ToastContainer } from "react-toastify";
 
 function App() {
   return (
     <main className="App relative">
+      <ToastContainer />
       <Suspense
         fallback={
           <div className="flex justify-center items-center h-screen">
