@@ -13,6 +13,7 @@ const useSubmit = (id, hook, redirect) => {
     reset,
     handleSubmit,
     watch,
+    setValue,
   } = useForm();
 
   const [submit, { isLoading, isSuccess, isError, error }] = hook();
@@ -47,6 +48,7 @@ const useSubmit = (id, hook, redirect) => {
     reset,
     handleSubmit,
     watch,
+    setValue,
     onSubmit,
     isLoading,
   };
