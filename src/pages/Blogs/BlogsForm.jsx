@@ -70,6 +70,8 @@ const BlogsForm = ({ id, data }) => {
       paragraph_one: data?.paragraph_one,
       paragraph_two: data?.paragraph_two,
       paragraph_three: data?.paragraph_three,
+      image_alt: data?.image_alt || "",
+      bg_image_alt: data?.bg_image_alt || "",
     });
   }, [data]);
 
@@ -148,23 +150,67 @@ const BlogsForm = ({ id, data }) => {
             error={errors?.back_link}
           />
 
-          <Fileinput
-            selectedFile={watch("image")?.[0]}
-            name={"image"}
-            defaultUrl={data?.image}
-            preview={true}
-            control={control}
-            label="Image"
-          />
+          <div>
+            <Fileinput
+              selectedFile={watch("image")?.[0]}
+              name={"image"}
+              defaultUrl={data?.image}
+              preview={true}
+              control={control}
+              label="Featured Card Image"
+            />
+            <div className="mt-2">
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  Featured Image Alt Text{" "}
+                  <span className="text-slate-400 font-normal">
+                    (SEO & Accessibility)
+                  </span>
+                </label>
+                <span className="text-[10px] text-slate-400">
+                  {(watch("image_alt") || "").length}/125
+                </span>
+              </div>
+              <input
+                type="text"
+                maxLength={125}
+                placeholder={`Default: ${watch("title") || "Blog Title"}`}
+                {...register("image_alt")}
+                className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+          </div>
 
-          <Fileinput
-            selectedFile={watch("bgImage")?.[0]}
-            name={"bgImage"}
-            defaultUrl={data?.bgImage}
-            preview={true}
-            control={control}
-            label="BG Image"
-          />
+          <div>
+            <Fileinput
+              selectedFile={watch("bgImage")?.[0]}
+              name={"bgImage"}
+              defaultUrl={data?.bgImage}
+              preview={true}
+              control={control}
+              label="Article Background / Banner Visual"
+            />
+            <div className="mt-2">
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  Background Visual Alt Text{" "}
+                  <span className="text-slate-400 font-normal">
+                    (SEO & Accessibility)
+                  </span>
+                </label>
+                <span className="text-[10px] text-slate-400">
+                  {(watch("bg_image_alt") || "").length}/125
+                </span>
+              </div>
+              <input
+                type="text"
+                maxLength={125}
+                placeholder={`Default: ${watch("title") || "Blog Title"}`}
+                {...register("bg_image_alt")}
+                className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+          </div>
         </div>
 
         <div className="ltr:text-right rtl:text-left space-x-3 rtl:space-x-reverse mt-6">

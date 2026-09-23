@@ -258,24 +258,49 @@ const AssetsForm = ({ id, data, refetch }) => {
           formData.append(key, coverValue);
         }
       } else if (key === "images") {
-        if (Array.isArray(data[key])) {
-          data[key].forEach((image) => {
-            const imgVal = image?.image;
-            const hasNewImg =
-              imgVal instanceof File ||
-              imgVal instanceof Blob ||
-              (imgVal && imgVal[0] instanceof File);
-            if (hasNewImg) {
-              formData.append("images", imgVal[0] || imgVal);
-            }
-          });
-        }
+        // Handled below with tempId and alt association
       } else {
         if (data[key] !== undefined && data[key] !== null) {
           formData.append(key, data[key]);
         }
       }
     });
+
+    // Handle gallery images & alt texts paired by tempId (new) or DB id (existing)
+    const newImageAlts = [];
+    const existingImageAlts = [];
+
+    if (Array.isArray(data.images)) {
+      data.images.forEach((item) => {
+        const imgVal = item?.image;
+        const hasNewImg =
+          imgVal instanceof File ||
+          imgVal instanceof Blob ||
+          (imgVal && imgVal[0] instanceof File);
+
+        if (hasNewImg) {
+          const file = imgVal[0] || imgVal;
+          const tempId =
+            item.tempId ||
+            (typeof crypto !== "undefined" && crypto.randomUUID
+              ? crypto.randomUUID()
+              : `temp_${Date.now()}_${Math.random()}`);
+          formData.append(`image_${tempId}`, file);
+          newImageAlts.push({
+            tempId,
+            alt: item?.alt?.trim() ? item.alt.trim().slice(0, 125) : "",
+          });
+        } else if (item?.id && !removedImageIds.includes(item.id)) {
+          existingImageAlts.push({
+            id: item.id,
+            alt: item?.alt?.trim() ? item.alt.trim().slice(0, 125) : "",
+          });
+        }
+      });
+    }
+
+    formData.append("newImageAlts", JSON.stringify(newImageAlts));
+    formData.append("existingImageAlts", JSON.stringify(existingImageAlts));
 
     // Always append size: auto-computed from file if selected, otherwise empty string
     // (backend will overwrite with actual size after upload completes)
@@ -319,18 +344,26 @@ const AssetsForm = ({ id, data, refetch }) => {
       resolution: data?.resolution,
       short_description: data?.short_description,
       sub_category_id: data?.sub_category?.id,
+      cover_alt: data?.cover_alt || "",
       images:
         data?.images && data.images.length > 0
           ? data.images.map((img) => ({
               id: img.id,
               defaultUrl: img.image,
               image: img.image,
+              alt: img.alt || "",
+              tempId: null,
             }))
           : [
               {
                 id: null,
                 defaultUrl: null,
                 image: null,
+                alt: "",
+                tempId:
+                  typeof crypto !== "undefined" && crypto.randomUUID
+                    ? crypto.randomUUID()
+                    : `temp_${Date.now()}`,
               },
             ],
 
@@ -465,6 +498,26 @@ const AssetsForm = ({ id, data, refetch }) => {
                     setValue("cover", null);
                   }}
                 />
+                <div className="mt-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                      Cover Image Alt Text{" "}
+                      <span className="text-slate-400 font-normal">
+                        (SEO & Accessibility)
+                      </span>
+                    </label>
+                    <span className="text-[10px] text-slate-400">
+                      {(watch("cover_alt") || "").length}/125
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    maxLength={125}
+                    placeholder={`Default: ${watch("name") || "Asset Name"}`}
+                    {...register("cover_alt")}
+                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
               </div>
 
               {/* Gallery Images Section */}
@@ -483,7 +536,16 @@ const AssetsForm = ({ id, data, refetch }) => {
                     text="+ Add Slot"
                     className="btn-outline-dark btn-sm py-1 px-3 text-xs"
                     onClick={() =>
-                      append({ id: null, defaultUrl: null, image: null })
+                      append({
+                        id: null,
+                        defaultUrl: null,
+                        image: null,
+                        alt: "",
+                        tempId:
+                          typeof crypto !== "undefined" && crypto.randomUUID
+                            ? crypto.randomUUID()
+                            : `temp_${Date.now()}`,
+                      })
                     }
                   />
                 </div>
@@ -523,80 +585,117 @@ const AssetsForm = ({ id, data, refetch }) => {
                     return (
                       <div
                         key={item.fieldId || `image-${index}`}
-                        className="relative aspect-square rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 shadow-sm hover:shadow transition flex items-center justify-center overflow-visible"
+                        className="flex flex-col"
                       >
-                        {/* Top-Right Red Circular Cross (X) Button */}
-                        <button
-                          type="button"
-                          title="Remove this image"
-                          onClick={() => {
-                            if (hasExistingDbImage) {
-                              setRemovedImageIds((prev) => [
-                                ...prev,
-                                dbImageId,
-                              ]);
-                            }
-                            remove(index);
-                          }}
-                          className="absolute -top-2 -right-2 z-20 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md hover:scale-110 transition-all cursor-pointer border-2 border-white dark:border-slate-800"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                            className="w-3.5 h-3.5"
+                        <div className="relative aspect-square rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 shadow-sm hover:shadow transition flex items-center justify-center overflow-visible">
+                          {/* Top-Right Red Circular Cross (X) Button */}
+                          <button
+                            type="button"
+                            title="Remove this image"
+                            onClick={() => {
+                              if (hasExistingDbImage) {
+                                setRemovedImageIds((prev) => [
+                                  ...prev,
+                                  dbImageId,
+                                ]);
+                              }
+                              remove(index);
+                            }}
+                            className="absolute -top-2 -right-2 z-20 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md hover:scale-110 transition-all cursor-pointer border-2 border-white dark:border-slate-800"
                           >
-                            <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-                          </svg>
-                        </button>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                              className="w-3.5 h-3.5"
+                            >
+                              <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                            </svg>
+                          </button>
 
-                        {/* Image Preview or File Picker */}
-                        {previewSrc ? (
-                          <div className="w-full h-full rounded-xl overflow-hidden p-1 flex items-center justify-center bg-white dark:bg-slate-900">
-                            <img
-                              src={previewSrc}
-                              alt={`Gallery Image ${index + 1}`}
-                              className="w-full h-full object-contain rounded-lg"
+                          {/* Image Preview or File Picker */}
+                          {previewSrc ? (
+                            <div className="w-full h-full rounded-xl overflow-hidden p-1 flex items-center justify-center bg-white dark:bg-slate-900">
+                              <img
+                                src={previewSrc}
+                                alt={`Gallery Image ${index + 1}`}
+                                className="w-full h-full object-contain rounded-lg"
+                              />
+                            </div>
+                          ) : (
+                            <Controller
+                              name={`images.${index}.image`}
+                              control={control}
+                              render={({ field: { onChange, ref } }) => (
+                                <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer p-3 text-center text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition group">
+                                  <input
+                                    type="file"
+                                    className="hidden"
+                                    ref={ref}
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                      const files = e.target.files;
+                                      onChange(files);
+                                      if (
+                                        files &&
+                                        files.length > 0 &&
+                                        !allImages?.[index]?.tempId
+                                      ) {
+                                        const newTempId =
+                                          typeof crypto !== "undefined" &&
+                                          crypto.randomUUID
+                                            ? crypto.randomUUID()
+                                            : `temp_${Date.now()}`;
+                                        setValue(
+                                          `images.${index}.tempId`,
+                                          newTempId,
+                                        );
+                                      }
+                                    }}
+                                  />
+                                  <div className="w-9 h-9 rounded-full bg-slate-200/70 dark:bg-slate-700/70 flex items-center justify-center mb-1 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40 transition">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      strokeWidth={1.5}
+                                      stroke="currentColor"
+                                      className="w-5 h-5 text-slate-500 group-hover:text-blue-600 transition"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
+                                      />
+                                    </svg>
+                                  </div>
+                                  <span className="text-xs font-medium">
+                                    Select Photo
+                                  </span>
+                                </label>
+                              )}
                             />
+                          )}
+                        </div>
+
+                        {/* Alt Text Input below image */}
+                        <div className="mt-2">
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                              Alt Text
+                            </label>
+                            <span className="text-[10px] text-slate-400">
+                              {(watch(`images.${index}.alt`) || "").length}/125
+                            </span>
                           </div>
-                        ) : (
-                          <Controller
-                            name={`images.${index}.image`}
-                            control={control}
-                            render={({ field: { onChange, ref } }) => (
-                              <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer p-3 text-center text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition group">
-                                <input
-                                  type="file"
-                                  className="hidden"
-                                  ref={ref}
-                                  accept="image/*"
-                                  onChange={(e) => {
-                                    onChange(e.target.files);
-                                  }}
-                                />
-                                <div className="w-9 h-9 rounded-full bg-slate-200/70 dark:bg-slate-700/70 flex items-center justify-center mb-1 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40 transition">
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    strokeWidth={1.5}
-                                    stroke="currentColor"
-                                    className="w-5 h-5 text-slate-500 group-hover:text-blue-600 transition"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
-                                    />
-                                  </svg>
-                                </div>
-                                <span className="text-xs font-medium">
-                                  Select Photo
-                                </span>
-                              </label>
-                            )}
+                          <input
+                            type="text"
+                            maxLength={125}
+                            placeholder={`Default: ${watch("name") || "Asset Name"}`}
+                            {...register(`images.${index}.alt`)}
+                            className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
                           />
-                        )}
+                        </div>
                       </div>
                     );
                   })}
@@ -605,7 +704,16 @@ const AssetsForm = ({ id, data, refetch }) => {
                   <button
                     type="button"
                     onClick={() =>
-                      append({ id: null, defaultUrl: null, image: null })
+                      append({
+                        id: null,
+                        defaultUrl: null,
+                        image: null,
+                        alt: "",
+                        tempId:
+                          typeof crypto !== "undefined" && crypto.randomUUID
+                            ? crypto.randomUUID()
+                            : `temp_${Date.now()}`,
+                      })
                     }
                     className="aspect-square rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-blue-500 dark:hover:border-blue-400 flex flex-col items-center justify-center text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition cursor-pointer p-3 group bg-white/50 dark:bg-slate-800/40"
                   >
