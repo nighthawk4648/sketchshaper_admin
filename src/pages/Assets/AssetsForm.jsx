@@ -56,6 +56,7 @@ const AssetsForm = ({ id, data, refetch }) => {
   const { append, remove, fields } = useFieldArray({
     control,
     name: "images",
+    keyName: "fieldId",
   });
 
   // Initialize upload queue
@@ -317,12 +318,18 @@ const AssetsForm = ({ id, data, refetch }) => {
       resolution: data?.resolution,
       short_description: data?.short_description,
       sub_category_id: data?.sub_category?.id,
-      images: data?.images || [
-        {
-          id: null,
-          image: null,
-        },
-      ],
+      images:
+        data?.images && data.images.length > 0
+          ? data.images.map((img) => ({
+              id: img.id,
+              image: img.image,
+            }))
+          : [
+              {
+                id: null,
+                image: null,
+              },
+            ],
 
       meta_title: data?.meta_title,
       meta_description: data?.meta_description,
@@ -414,7 +421,8 @@ const AssetsForm = ({ id, data, refetch }) => {
             {fields.map((item, index) => {
               const allImages = watch("images");
               const imageValue = allImages?.[index]?.image;
-              const dbImageId = allImages?.[index]?.id; // DB AssetImage id (null for newly added slots)
+              // item.id retains the database AssetImage ID because keyName is "fieldId"
+              const dbImageId = item?.id || allImages?.[index]?.id;
               const selectedFile =
                 imageValue &&
                 Array.isArray(imageValue) &&
@@ -426,7 +434,7 @@ const AssetsForm = ({ id, data, refetch }) => {
                 dbImageId && typeof dbImageId === "number";
 
               return (
-                <div key={`image-${index}-${item.id}`} className="relative">
+                <div key={item.fieldId || `image-${index}`} className="relative">
                   {/* (X) remove button — top-right corner of this image slot */}
                   <button
                     type="button"
@@ -440,7 +448,12 @@ const AssetsForm = ({ id, data, refetch }) => {
                     }}
                     className="absolute -top-2 -right-2 z-10 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md hover:scale-110 transition-all cursor-pointer"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      className="w-3.5 h-3.5"
+                    >
                       <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
                     </svg>
                   </button>
@@ -460,7 +473,7 @@ const AssetsForm = ({ id, data, refetch }) => {
               <Button
                 text="Add More Image"
                 className="btn-dark"
-                onClick={() => append({ id: fields.length + 1, image: null })}
+                onClick={() => append({ id: null, image: null })}
               />
             </div>
           </div>
@@ -482,7 +495,12 @@ const AssetsForm = ({ id, data, refetch }) => {
                   }}
                   className="absolute -top-2 -right-2 z-10 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md hover:scale-110 transition-all cursor-pointer"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="w-3.5 h-3.5"
+                  >
                     <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
                   </svg>
                 </button>
@@ -541,10 +559,18 @@ const AssetsForm = ({ id, data, refetch }) => {
                 </span>
                 <button
                   type="button"
+                  title="Remove selected file"
                   onClick={() => setSelectedModelFile(null)}
-                  className="text-red-400 hover:text-red-600 text-xs font-bold ml-1"
+                  className="w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md hover:scale-110 transition-all cursor-pointer ml-1"
                 >
-                  ✕ Remove
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="w-3.5 h-3.5"
+                  >
+                    <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                  </svg>
                 </button>
               </div>
             )}

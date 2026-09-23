@@ -1,55 +1,55 @@
-import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const useSubmit = (id, hook, redirect) => {
-	const navigate = useNavigate();
+  const navigate = useNavigate();
 
-	const {
-		register,
-		unregister,
-		control,
-		formState: { errors },
-		reset,
-		handleSubmit,
-		watch,
-	} = useForm();
+  const {
+    register,
+    unregister,
+    control,
+    formState: { errors },
+    reset,
+    handleSubmit,
+    watch,
+  } = useForm();
 
-	const [submit, { isLoading, isSuccess, isError, error }] = hook();
+  const [submit, { isLoading, isSuccess, isError, error }] = hook();
 
-	const onSubmit = async (preparedData) => {
-		try {
-			const { data } = await (id
-				? submit({ id, data: preparedData })
-				: submit(preparedData));
+  const onSubmit = async (preparedData) => {
+    try {
+      const { data } = await (id
+        ? submit({ id, data: preparedData })
+        : submit(preparedData));
 
-			if (data?.status !== 'success') {
-				throw new Error(data?.message || 'Error occurred from server!');
-			}
-			reset();
-			if (redirect !== false) {
-				navigate(redirect ? redirect : -1);
-			}
-			toast.success(data?.message);
-			return data?.data; // return created/updated entity so callers can chain actions
-		} catch (error) {
-			console.log(error);
-			toast.error(error.message || 'Something went wrong!');
-			return null; // explicit null on failure
-		}
-	};
+      if (data?.status !== "success") {
+        throw new Error(data?.message || "Error occurred from server!");
+      }
+      reset();
+      if (redirect !== false) {
+        navigate(redirect ? redirect : -1);
+      }
+      toast.success(data?.message);
+      return data?.data; // return created/updated entity so callers can chain actions
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message || "Something went wrong!");
+      return null; // explicit null on failure
+    }
+  };
 
-	return {
-		register,
-		unregister,
-		control,
-		errors,
-		reset,
-		handleSubmit,
-		watch,
-		onSubmit,
-		isLoading,
-	};
+  return {
+    register,
+    unregister,
+    control,
+    errors,
+    reset,
+    handleSubmit,
+    watch,
+    onSubmit,
+    isLoading,
+  };
 };
 
 export default useSubmit;
