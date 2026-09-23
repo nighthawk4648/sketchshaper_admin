@@ -32,6 +32,8 @@ const AssetsForm = ({ id, data, refetch }) => {
   const [existingFile, setExistingFile] = useState(data?.file || null);
   const [selectedModelFile, setSelectedModelFile] = useState(null); // staged file before submit
   const [isUploading, setIsUploading] = useState(false); // locks button during chunked upload
+  const [removedImageIds, setRemovedImageIds] = useState([]); // DB AssetImage ids staged for deletion on save
+  const [deleteExistingFile, setDeleteExistingFile] = useState(false); // flag to delete current 3D file on save
 
   console.log("will be update", data);
 
@@ -280,8 +282,24 @@ const AssetsForm = ({ id, data, refetch }) => {
       selectedModelFile ? formatBytes(selectedModelFile.size) : "",
     );
 
+    // Append staged image removals — backend reads removedImageIds[0], removedImageIds[1], ...
+    removedImageIds.forEach((imgId, i) => {
+      formData.append(`removedImageIds[${i}]`, imgId);
+    });
+
+    // Tell backend to delete the existing 3D file only if no new file is replacing it
+    if (deleteExistingFile && !selectedModelFile) {
+      formData.append("delete_file", "true");
+    }
+
     // Step 1: Create / Update asset record
     const createdAsset = await onSubmit(formData);
+
+    // Clear staged removal state after successful save
+    if (createdAsset) {
+      setRemovedImageIds([]);
+      setDeleteExistingFile(false);
+    }
 
     // Step 2: If asset was created/found and a 3D file is staged, start chunked upload
     const targetId = createdAsset?.id || assetId;
@@ -396,6 +414,7 @@ const AssetsForm = ({ id, data, refetch }) => {
             {fields.map((item, index) => {
               const allImages = watch("images");
               const imageValue = allImages?.[index]?.image;
+              const dbImageId = allImages?.[index]?.id; // DB AssetImage id (null for newly added slots)
               const selectedFile =
                 imageValue &&
                 Array.isArray(imageValue) &&
@@ -403,29 +422,41 @@ const AssetsForm = ({ id, data, refetch }) => {
                 typeof imageValue[0] !== "string"
                   ? imageValue[0]
                   : null;
+              const hasExistingDbImage =
+                dbImageId && typeof dbImageId === "number";
 
               return (
-                <Fileinput
-                  key={`image-${index}-${item.id}`}
-                  selectedFile={selectedFile}
-                  name={`images.${index}.image`}
-                  label={`Asset Image ${index + 1}`}
-                  defaultUrl={data?.images?.[index]?.image}
-                  preview={true}
-                  control={control}
-                  classLabel={"mt-2"}
-                />
+                <div key={`image-${index}-${item.id}`} className="relative">
+                  {/* (X) remove button — top-right corner of this image slot */}
+                  <button
+                    type="button"
+                    title="Remove this image"
+                    onClick={() => {
+                      if (hasExistingDbImage) {
+                        // Stage the DB image for deletion on save
+                        setRemovedImageIds((prev) => [...prev, dbImageId]);
+                      }
+                      remove(index);
+                    }}
+                    className="absolute -top-2 -right-2 z-10 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md hover:scale-110 transition-all cursor-pointer"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                      <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                    </svg>
+                  </button>
+                  <Fileinput
+                    selectedFile={selectedFile}
+                    name={`images.${index}.image`}
+                    label={`Asset Image ${index + 1}`}
+                    defaultUrl={data?.images?.[index]?.image}
+                    preview={true}
+                    control={control}
+                    classLabel={"mt-2"}
+                  />
+                </div>
               );
             })}
             <div className="text-center mt-3 flex gap-3 justify-center">
-              <Button
-                text="Remove Last Image"
-                className={`btn-danger ${
-                  data?.images?.length >= fields.length ? "hidden" : ""
-                }`}
-                onClick={() => remove(fields.length - 1)}
-              />
-
               <Button
                 text="Add More Image"
                 className="btn-dark"
@@ -440,47 +471,63 @@ const AssetsForm = ({ id, data, refetch }) => {
 
             {/* Existing file card (shown in Edit mode when a file already exists) */}
             {existingFile && (
-              <Card
-                title="Current File"
-                className="mb-4 bg-green-50 border-green-200"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <p className="font-medium text-sm text-gray-700">
-                        {existingFile.main_file?.split("/").pop() || "File"}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        File Type:{" "}
-                        <span className="font-semibold">
-                          {existingFile.file_type}
+              <div className="relative mb-4">
+                {/* (X) remove button — top-right corner of the 3D file card */}
+                <button
+                  type="button"
+                  title="Remove this 3D file (will delete on Save)"
+                  onClick={() => {
+                    setDeleteExistingFile(true);
+                    setExistingFile(null);
+                  }}
+                  className="absolute -top-2 -right-2 z-10 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md hover:scale-110 transition-all cursor-pointer"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                    <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                  </svg>
+                </button>
+                <Card
+                  title="Current File"
+                  className="bg-green-50 border-green-200"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm text-gray-700">
+                          {existingFile.main_file?.split("/").pop() || "File"}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          File Type:{" "}
+                          <span className="font-semibold">
+                            {existingFile.file_type}
+                          </span>
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Chunks:{" "}
+                          <span className="font-semibold">
+                            {existingFile.uploaded_chunks}/
+                            {existingFile.total_chunks}
+                          </span>
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className="px-3 py-1 text-xs font-bold rounded bg-green-200 text-green-800">
+                          {existingFile.upload_status?.toUpperCase()}
                         </span>
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Chunks:{" "}
-                        <span className="font-semibold">
-                          {existingFile.uploaded_chunks}/
-                          {existingFile.total_chunks}
-                        </span>
-                      </p>
+                        <p className="text-sm font-bold text-green-600 mt-2">
+                          {existingFile.upload_progress}%
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="px-3 py-1 text-xs font-bold rounded bg-green-200 text-green-800">
-                        {existingFile.upload_status?.toUpperCase()}
-                      </span>
-                      <p className="text-sm font-bold text-green-600 mt-2">
-                        {existingFile.upload_progress}%
-                      </p>
+                    <div className="w-full bg-gray-300 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full"
+                        style={{ width: `${existingFile.upload_progress}%` }}
+                      ></div>
                     </div>
                   </div>
-                  <div className="w-full bg-gray-300 rounded-full h-2 overflow-hidden">
-                    <div
-                      className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full"
-                      style={{ width: `${existingFile.upload_progress}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </Card>
+                </Card>
+              </div>
             )}
 
             {/* Staged file preview — shown after selection, before submit */}
