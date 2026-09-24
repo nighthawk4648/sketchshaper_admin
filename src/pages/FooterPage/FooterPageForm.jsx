@@ -17,8 +17,6 @@ const FooterPageForm = ({ id, data }) => {
   const { isAuth, auth } = useSelector((state) => state.auth);
   const navigate = useNavigate();
 
-  console.log("will be update", data);
-
   const {
     register,
     unregister,
@@ -28,6 +26,7 @@ const FooterPageForm = ({ id, data }) => {
     handleSubmit,
     onSubmit,
     watch,
+    setValue,
     isLoading,
   } = useSubmit(
     id,
@@ -72,111 +71,141 @@ const FooterPageForm = ({ id, data }) => {
       meta_description: data?.meta_description || "",
       keywords: data?.keywords || "",
     });
-  }, [data]);
+  }, [data, reset]);
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)}>
-      <Card title={id ? "Edit Footer Page" : "Create New Footer Page"}>
-        <div className="grid grid-cols-1 gap-5">
-          <Textinput
-            register={register}
-            label="Title"
-            type="text"
-            placeholder="Title"
-            name="title"
-            required={true}
-            error={errors?.title}
-          />
-
-          {/* 
-                    <Textinput
-                        register={register}
-                        label="Slug"
-                        type="text"
-                        placeholder="Slug"
-                        name="slug"
-                        required={true}
-                        error={errors?.slug}
-                    /> */}
-
-          <Textarea
-            name="short_description"
-            register={register}
-            label="Short Description"
-            type="textarea"
-            placeholder="Sub-Category short_description"
-            row={6}
-            required={true}
-            error={errors?.short_description}
-          />
-
-          {/* <Fileinput
-                        selectedFile={watch('cover')?.[0]}
-                        name={'cover'}
-                        defaultUrl={data?.cover}
-                        preview={true}
-                        control={control}
-                    /> */}
-
-          <TextEditor
-            name="content"
-            errors={errors}
-            control={control}
-            required={false}
-          />
-
-          {/* Search Engine Optimization (SEO) */}
-          <div className="pt-4 border-t border-slate-200 dark:border-slate-700 space-y-4">
-            <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-              Search Engine Optimization (SEO)
-            </h4>
-            <Textinput
-              register={register}
-              label="Meta Title"
-              type="text"
-              placeholder="Meta Title"
-              name="meta_title"
-              required={false}
-              error={errors?.meta_title}
-            />
-
-            <div>
-              <p className="text-sm font-semibold mb-2">Meta Description</p>
-              <TextEditor
-                name="meta_description"
-                errors={errors}
-                control={control}
-                required={false}
-              />
-            </div>
-
-            <Textarea
-              name="keywords"
-              register={register}
-              label="Keywords"
-              type="textarea"
-              placeholder="Comma-separated keywords"
-              row={3}
-              required={false}
-              error={errors?.keywords}
-            />
-          </div>
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+      {/* Top Header & Actions Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-700">
+        <div>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+            {id
+              ? `Edit Custom Page: ${data?.title || ""}`
+              : "Create New Custom Page"}
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            {id
+              ? "Update page content, rich text body, and search engine optimization"
+              : "Draft and publish a new custom content page with SEO metadata"}
+          </p>
         </div>
-
-        <div className="ltr:text-right rtl:text-left space-x-3 rtl:space-x-reverse mt-6">
+        <div className="flex items-center gap-2.5">
           <Button
+            type="button"
             onClick={() => navigate(-1)}
             text="Cancel"
-            className="btn-light"
+            className="btn-light btn-sm"
           />
           <Button
             isLoading={isLoading}
             type="submit"
-            text="Save"
-            className="btn-dark"
+            text={id ? "Update Page" : "Create Page"}
+            className="btn-dark btn-sm"
           />
         </div>
-      </Card>
+      </div>
+
+      {/* 2-Column Responsive Layout */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        {/* LEFT COLUMN: Page Content (7 Cols) */}
+        <div className="xl:col-span-7 space-y-6">
+          <Card title="Page Content">
+            <div className="space-y-4">
+              <Textinput
+                register={register}
+                label="Page Title"
+                type="text"
+                placeholder="e.g. Terms and Conditions, Privacy Policy, About Us"
+                name="title"
+                required={true}
+                error={errors?.title}
+              />
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Short Description
+                </label>
+                <Textarea
+                  name="short_description"
+                  register={register}
+                  placeholder="Summary or subtitle for this custom page..."
+                  row={3}
+                  required={true}
+                  error={errors?.short_description}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Body Content
+                </label>
+                <TextEditor
+                  name="content"
+                  errors={errors}
+                  control={control}
+                  required={false}
+                />
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* RIGHT COLUMN: SEO Metadata (5 Cols) */}
+        <div className="xl:col-span-5 space-y-6">
+          <Card title="Search Engine Optimization (SEO)">
+            <div className="space-y-4">
+              <Textinput
+                register={register}
+                label="Meta Title"
+                type="text"
+                placeholder="e.g. Terms & Conditions | SketchShaper"
+                name="meta_title"
+                required={false}
+                error={errors?.meta_title}
+              />
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Meta Description
+                </label>
+                <TextEditor
+                  name="meta_description"
+                  errors={errors}
+                  control={control}
+                  required={false}
+                />
+              </div>
+
+              <Textarea
+                name="keywords"
+                register={register}
+                label="Keywords"
+                type="textarea"
+                placeholder="Comma-separated keywords (e.g. terms, privacy, sketchshaper)"
+                row={3}
+                required={false}
+                error={errors?.keywords}
+              />
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      {/* Bottom Sticky Action Bar */}
+      <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+        <Button
+          type="button"
+          onClick={() => navigate(-1)}
+          text="Cancel"
+          className="btn-light"
+        />
+        <Button
+          isLoading={isLoading}
+          type="submit"
+          text={id ? "Update Page" : "Save Page"}
+          className="btn-dark"
+        />
+      </div>
     </form>
   );
 };
