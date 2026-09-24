@@ -68,6 +68,9 @@ const FooterPageForm = ({ id, data }) => {
       short_description: data?.short_description,
       content: data?.content,
       cover: data?.cover || null,
+      meta_title: data?.meta_title || "",
+      meta_description: data?.meta_description || "",
+      keywords: data?.keywords || "",
     });
   }, [data]);
 
@@ -121,6 +124,43 @@ const FooterPageForm = ({ id, data }) => {
             control={control}
             required={false}
           />
+
+          {/* Search Engine Optimization (SEO) */}
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-700 space-y-4">
+            <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+              Search Engine Optimization (SEO)
+            </h4>
+            <Textinput
+              register={register}
+              label="Meta Title"
+              type="text"
+              placeholder="Meta Title"
+              name="meta_title"
+              required={false}
+              error={errors?.meta_title}
+            />
+
+            <div>
+              <p className="text-sm font-semibold mb-2">Meta Description</p>
+              <TextEditor
+                name="meta_description"
+                errors={errors}
+                control={control}
+                required={false}
+              />
+            </div>
+
+            <Textarea
+              name="keywords"
+              register={register}
+              label="Keywords"
+              type="textarea"
+              placeholder="Comma-separated keywords"
+              row={3}
+              required={false}
+              error={errors?.keywords}
+            />
+          </div>
         </div>
 
         <div className="ltr:text-right rtl:text-left space-x-3 rtl:space-x-reverse mt-6">

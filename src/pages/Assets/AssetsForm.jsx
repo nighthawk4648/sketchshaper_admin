@@ -3,6 +3,7 @@ import TextEditor from "@/components/shared/Select/TextEditor";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Fileinput from "@/components/ui/Fileinput";
+import Textarea from "@/components/ui/Textarea";
 import Textinput from "@/components/ui/Textinput";
 import envConfig from "@/configs/envConfig";
 import useSubmit from "@/hooks/useSubmit";
@@ -369,6 +370,7 @@ const AssetsForm = ({ id, data, refetch }) => {
 
       meta_title: data?.meta_title,
       meta_description: data?.meta_description,
+      keywords: data?.keywords || "",
     });
 
     // Set existing file if updating
@@ -945,6 +947,16 @@ const AssetsForm = ({ id, data, refetch }) => {
                   required={false}
                 />
               </div>
+              <Textarea
+                name="keywords"
+                register={register}
+                label="Keywords"
+                type="textarea"
+                placeholder="Comma-separated keywords (e.g. 3d model, sketchup, armchair)"
+                row={3}
+                required={false}
+                error={errors?.keywords}
+              />
             </div>
           </Card>
         </div>
