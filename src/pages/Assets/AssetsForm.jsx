@@ -14,6 +14,7 @@ import {
 import AssetsChunkedUploader from "@/utils/AssetsChunkedUploader";
 import UploadQueue from "@/utils/UploadQueue";
 import { apiSlice } from "@/store/api/apiSlice";
+import { extractFile, resolveImageUrl } from "@/utils/fileAndImageHelpers";
 
 import { useEffect, useRef, useState } from "react";
 import { Controller, useFieldArray } from "react-hook-form";
@@ -21,12 +22,158 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
+// Gallery Image Card with automatic object URL creation and revocation cleanup
+const GalleryImageCard = ({
+  item,
+  index,
+  control,
+  watch,
+  setValue,
+  register,
+  remove,
+  removedImageIds,
+  setRemovedImageIds,
+}) => {
+  const allImages = watch("images");
+  const imageValue = allImages?.[index]?.image;
+  const dbImageId = item?.id || allImages?.[index]?.id;
+  const isImageRemoved = dbImageId && removedImageIds.includes(dbImageId);
+
+  const selectedFile = extractFile(imageValue);
+  const [objectUrl, setObjectUrl] = useState(null);
+
+  useEffect(() => {
+    if (selectedFile instanceof File || selectedFile instanceof Blob) {
+      const url = URL.createObjectURL(selectedFile);
+      setObjectUrl(url);
+      return () => {
+        URL.revokeObjectURL(url);
+      };
+    } else {
+      setObjectUrl(null);
+    }
+  }, [selectedFile]);
+
+  const existingImageUrl =
+    !isImageRemoved &&
+    (item?.defaultUrl || (typeof item?.image === "string" ? item.image : null));
+
+  const previewSrc = objectUrl || resolveImageUrl(existingImageUrl);
+  const hasExistingDbImage = dbImageId && typeof dbImageId === "number";
+
+  return (
+    <div key={item.fieldId || `image-${index}`} className="flex flex-col">
+      <div className="relative aspect-square rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 shadow-sm hover:shadow transition flex items-center justify-center overflow-visible">
+        {/* Top-Right Red Circular Cross (X) Button */}
+        <button
+          type="button"
+          title="Remove this image"
+          onClick={() => {
+            if (hasExistingDbImage) {
+              setRemovedImageIds((prev) => [...prev, dbImageId]);
+            }
+            remove(index);
+          }}
+          className="absolute -top-2 -right-2 z-20 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md hover:scale-110 transition-all cursor-pointer border-2 border-white dark:border-slate-800"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="w-3.5 h-3.5"
+          >
+            <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+          </svg>
+        </button>
+
+        {/* Image Preview or File Picker */}
+        {previewSrc ? (
+          <div className="w-full h-full rounded-xl overflow-hidden p-1 flex items-center justify-center bg-white dark:bg-slate-900">
+            <img
+              src={previewSrc}
+              alt={`Gallery Image ${index + 1}`}
+              className="w-full h-full object-contain rounded-lg"
+            />
+          </div>
+        ) : (
+          <Controller
+            name={`images.${index}.image`}
+            control={control}
+            render={({ field: { onChange, ref } }) => (
+              <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer p-3 text-center text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition group">
+                <input
+                  type="file"
+                  className="hidden"
+                  ref={ref}
+                  accept="image/*"
+                  onChange={(e) => {
+                    const files = e.target.files;
+                    onChange(files);
+                    if (
+                      files &&
+                      files.length > 0 &&
+                      !allImages?.[index]?.tempId
+                    ) {
+                      const newTempId =
+                        typeof crypto !== "undefined" && crypto.randomUUID
+                          ? crypto.randomUUID()
+                          : `temp_${Date.now()}`;
+                      setValue(`images.${index}.tempId`, newTempId);
+                    }
+                  }}
+                />
+                <div className="w-9 h-9 rounded-full bg-slate-200/70 dark:bg-slate-700/70 flex items-center justify-center mb-1 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40 transition">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-5 h-5 text-slate-500 group-hover:text-blue-600 transition"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
+                    />
+                  </svg>
+                </div>
+                <span className="text-xs font-medium">Select Photo</span>
+              </label>
+            )}
+          />
+        )}
+      </div>
+
+      {/* Alt Text Input below image */}
+      <div className="mt-2">
+        <div className="flex items-center justify-between mb-1">
+          <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400">
+            Alt Text
+          </label>
+          <span className="text-[10px] text-slate-400">
+            {(watch(`images.${index}.alt`) || "").length}/125
+          </span>
+        </div>
+        <input
+          type="text"
+          maxLength={125}
+          placeholder={`Default: ${watch("name") || "Asset Name"}`}
+          {...register(`images.${index}.alt`)}
+          className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+      </div>
+    </div>
+  );
+};
+
 const AssetsForm = ({ id, data, refetch }) => {
   const dispatch = useDispatch();
   const { isAuth, auth } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const uploadQueueRef = useRef(null);
   const fileInputRef = useRef(null);
+  const lastUploadedFileRef = useRef(null); // Tracks ground truth of locally uploaded file
   const [uploads, setUploads] = useState([]);
   const [assetId, setAssetId] = useState(id || null);
   const [isAssetCreated, setIsAssetCreated] = useState(!!id);
@@ -82,24 +229,25 @@ const AssetsForm = ({ id, data, refetch }) => {
               upload.status !== "completed"
             ) {
               toast.success(`✅ ${upload.name} uploaded successfully!`);
+              setIsUploading(false); // release button lock
+              setSelectedModelFile(null); // clear staged state so it no longer appears pending
+              setDeleteExistingFile(false); // clear staged deletion flag
+
+              const completedFile = queueItem.result?.file || queueItem.result || {
+                main_file: upload.name,
+                file_type: "." + upload.name.split(".").pop(),
+                file_size: upload.size,
+                upload_status: "completed",
+                upload_progress: 100,
+                uploaded_chunks: upload.totalChunks,
+                total_chunks: upload.totalChunks,
+              };
+
+              setExistingFile(completedFile);
+              lastUploadedFileRef.current = completedFile; // Lock in the newly uploaded file to guard against stale server refetches
+
               dispatch(apiSlice.util.invalidateTags(["assets"]));
               if (refetch) refetch();
-
-              setIsUploading(false); // release button lock
-
-              if (queueItem.result?.file) {
-                setExistingFile(queueItem.result.file);
-              } else {
-                setExistingFile({
-                  main_file: upload.name,
-                  file_type: "." + upload.name.split(".").pop(),
-                  file_size: upload.size,
-                  upload_status: "completed",
-                  upload_progress: 100,
-                  uploaded_chunks: upload.totalChunks,
-                  total_chunks: upload.totalChunks,
-                });
-              }
 
               // Auto-redirect only in Create mode (Edit mode stays on the edit page)
               if (!id) {
@@ -109,7 +257,8 @@ const AssetsForm = ({ id, data, refetch }) => {
             // Show toast notification on failure
             if (queueItem.status === "failed" && upload.status !== "failed") {
               toast.error(`❌ Failed to upload ${upload.name}`);
-              setIsUploading(false); // release button lock on failure too
+              setIsUploading(false); // release button lock on failure
+              // Do NOT transition to ATTACHED; do not set existingFile
             }
             return {
               ...upload,
@@ -137,6 +286,10 @@ const AssetsForm = ({ id, data, refetch }) => {
 
   // Called internally from handleFormSubmit after the asset record is created
   const startChunkedUpload = (file, targetAssetId) => {
+    if (!uploadQueueRef.current) {
+      throw new Error("Upload queue is not initialized");
+    }
+
     setIsUploading(true);
     let itemId = null;
 
@@ -177,6 +330,8 @@ const AssetsForm = ({ id, data, refetch }) => {
         uploader,
       },
     ]);
+
+    return itemId;
   };
 
   const handlePause = (id) => {
@@ -316,6 +471,7 @@ const AssetsForm = ({ id, data, refetch }) => {
     });
 
     // Tell backend to delete the existing 3D file only if no new file is replacing it
+    // (When replacing, backend completeUpload cleans up the previous file once merged)
     if (deleteExistingFile && !selectedModelFile) {
       formData.append("delete_file", "true");
     }
@@ -326,7 +482,9 @@ const AssetsForm = ({ id, data, refetch }) => {
     // Clear staged removal state after successful save
     if (createdAsset) {
       setRemovedImageIds([]);
-      setDeleteExistingFile(false);
+      if (!selectedModelFile) {
+        setDeleteExistingFile(false);
+      }
     }
 
     // Step 2: If asset was created/found and a 3D file is staged, start chunked upload
@@ -334,8 +492,19 @@ const AssetsForm = ({ id, data, refetch }) => {
     if (selectedModelFile && targetId) {
       setAssetId(targetId);
       setIsAssetCreated(true);
-      startChunkedUpload(selectedModelFile, targetId);
-      // Upload completion triggers auto-redirect (see UploadQueue callback)
+      const fileToUpload = selectedModelFile;
+      try {
+        const queuedId = startChunkedUpload(fileToUpload, targetId);
+        if (queuedId) {
+          // File has been successfully accepted by the uploader queue; clear the staged state
+          setSelectedModelFile(null);
+        }
+      } catch (err) {
+        console.error("Failed to start chunked upload:", err);
+        setIsUploading(false);
+        toast.error("Failed to start 3D model upload. Please retry saving.");
+        // Retain selectedModelFile so the user doesn't lose their file selection on sync failure
+      }
     }
   };
 
@@ -373,11 +542,27 @@ const AssetsForm = ({ id, data, refetch }) => {
       keywords: data?.keywords || "",
     });
 
-    // Set existing file if updating
+    // Guard against overwriting local 3D file state during active upload, staging, or deletion
+    if (isUploading || selectedModelFile || deleteExistingFile) {
+      return;
+    }
+
+    // If an upload recently finished locally, guard against a lagging background refetch
+    if (lastUploadedFileRef.current) {
+      if (data?.file?.main_file === lastUploadedFileRef.current.main_file) {
+        setExistingFile(data.file);
+        lastUploadedFileRef.current = null; // Ground truth synced with server
+      }
+      return;
+    }
+
+    // Normal synchronization from server
     if (data?.file) {
       setExistingFile(data.file);
+    } else {
+      setExistingFile(null);
     }
-  }, [data, reset]);
+  }, [data, reset, isUploading, selectedModelFile, deleteExistingFile]);
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
@@ -490,7 +675,7 @@ const AssetsForm = ({ id, data, refetch }) => {
                   </span>
                 </label>
                 <Fileinput
-                  selectedFile={watch("cover")?.[0]}
+                  selectedFile={watch("cover")}
                   name={"cover"}
                   label="Select Cover Image"
                   defaultUrl={data?.cover}
@@ -554,153 +739,20 @@ const AssetsForm = ({ id, data, refetch }) => {
 
                 {/* Gallery Thumbnail Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {fields.map((item, index) => {
-                    const allImages = watch("images");
-                    const imageValue = allImages?.[index]?.image;
-                    const dbImageId = item?.id || allImages?.[index]?.id;
-                    const isImageRemoved =
-                      dbImageId && removedImageIds.includes(dbImageId);
-
-                    // Field-scoped default image url
-                    const existingImageUrl =
-                      !isImageRemoved &&
-                      (item?.defaultUrl ||
-                        (typeof item?.image === "string" ? item.image : null));
-
-                    const selectedFile =
-                      imageValue &&
-                      Array.isArray(imageValue) &&
-                      imageValue.length > 0 &&
-                      typeof imageValue[0] !== "string"
-                        ? imageValue[0]
-                        : null;
-
-                    const hasExistingDbImage =
-                      dbImageId && typeof dbImageId === "number";
-
-                    const previewSrc = selectedFile
-                      ? URL.createObjectURL(selectedFile)
-                      : existingImageUrl
-                        ? envConfig.apiImgUrl + existingImageUrl
-                        : null;
-
-                    return (
-                      <div
-                        key={item.fieldId || `image-${index}`}
-                        className="flex flex-col"
-                      >
-                        <div className="relative aspect-square rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 shadow-sm hover:shadow transition flex items-center justify-center overflow-visible">
-                          {/* Top-Right Red Circular Cross (X) Button */}
-                          <button
-                            type="button"
-                            title="Remove this image"
-                            onClick={() => {
-                              if (hasExistingDbImage) {
-                                setRemovedImageIds((prev) => [
-                                  ...prev,
-                                  dbImageId,
-                                ]);
-                              }
-                              remove(index);
-                            }}
-                            className="absolute -top-2 -right-2 z-20 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md hover:scale-110 transition-all cursor-pointer border-2 border-white dark:border-slate-800"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                              className="w-3.5 h-3.5"
-                            >
-                              <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-                            </svg>
-                          </button>
-
-                          {/* Image Preview or File Picker */}
-                          {previewSrc ? (
-                            <div className="w-full h-full rounded-xl overflow-hidden p-1 flex items-center justify-center bg-white dark:bg-slate-900">
-                              <img
-                                src={previewSrc}
-                                alt={`Gallery Image ${index + 1}`}
-                                className="w-full h-full object-contain rounded-lg"
-                              />
-                            </div>
-                          ) : (
-                            <Controller
-                              name={`images.${index}.image`}
-                              control={control}
-                              render={({ field: { onChange, ref } }) => (
-                                <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer p-3 text-center text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition group">
-                                  <input
-                                    type="file"
-                                    className="hidden"
-                                    ref={ref}
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                      const files = e.target.files;
-                                      onChange(files);
-                                      if (
-                                        files &&
-                                        files.length > 0 &&
-                                        !allImages?.[index]?.tempId
-                                      ) {
-                                        const newTempId =
-                                          typeof crypto !== "undefined" &&
-                                          crypto.randomUUID
-                                            ? crypto.randomUUID()
-                                            : `temp_${Date.now()}`;
-                                        setValue(
-                                          `images.${index}.tempId`,
-                                          newTempId,
-                                        );
-                                      }
-                                    }}
-                                  />
-                                  <div className="w-9 h-9 rounded-full bg-slate-200/70 dark:bg-slate-700/70 flex items-center justify-center mb-1 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40 transition">
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                      strokeWidth={1.5}
-                                      stroke="currentColor"
-                                      className="w-5 h-5 text-slate-500 group-hover:text-blue-600 transition"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
-                                      />
-                                    </svg>
-                                  </div>
-                                  <span className="text-xs font-medium">
-                                    Select Photo
-                                  </span>
-                                </label>
-                              )}
-                            />
-                          )}
-                        </div>
-
-                        {/* Alt Text Input below image */}
-                        <div className="mt-2">
-                          <div className="flex items-center justify-between mb-1">
-                            <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400">
-                              Alt Text
-                            </label>
-                            <span className="text-[10px] text-slate-400">
-                              {(watch(`images.${index}.alt`) || "").length}/125
-                            </span>
-                          </div>
-                          <input
-                            type="text"
-                            maxLength={125}
-                            placeholder={`Default: ${watch("name") || "Asset Name"}`}
-                            {...register(`images.${index}.alt`)}
-                            className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {fields.map((item, index) => (
+                    <GalleryImageCard
+                      key={item.fieldId || `image-${index}`}
+                      item={item}
+                      index={index}
+                      control={control}
+                      watch={watch}
+                      setValue={setValue}
+                      register={register}
+                      remove={remove}
+                      removedImageIds={removedImageIds}
+                      setRemovedImageIds={setRemovedImageIds}
+                    />
+                  ))}
 
                   {/* "+ Add Image" Dashed Card */}
                   <button
@@ -757,6 +809,7 @@ const AssetsForm = ({ id, data, refetch }) => {
                     onClick={() => {
                       setDeleteExistingFile(true);
                       setExistingFile(null);
+                      lastUploadedFileRef.current = null;
                     }}
                     className="absolute -top-2.5 -right-2.5 z-20 w-7 h-7 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md hover:scale-110 transition-all cursor-pointer border-2 border-white dark:border-slate-800"
                   >
@@ -783,7 +836,15 @@ const AssetsForm = ({ id, data, refetch }) => {
                         <span className="font-medium text-slate-700 dark:text-slate-300">
                           {existingFile.file_type || ".skp"}
                         </span>
-                        {data?.size && (
+                        {existingFile.file_size ? (
+                          <span>
+                            {" "}
+                            • Size:{" "}
+                            <span className="font-medium text-slate-700 dark:text-slate-300">
+                              {formatBytes(Number(existingFile.file_size))}
+                            </span>
+                          </span>
+                        ) : data?.size ? (
                           <span>
                             {" "}
                             • Size:{" "}
@@ -791,7 +852,7 @@ const AssetsForm = ({ id, data, refetch }) => {
                               {data.size}
                             </span>
                           </span>
-                        )}
+                        ) : null}
                       </p>
                     </div>
                     <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-green-200 text-green-800 dark:bg-green-900/40 dark:text-green-300">
