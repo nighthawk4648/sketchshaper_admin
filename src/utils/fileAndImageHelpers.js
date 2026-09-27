@@ -11,7 +11,11 @@ import envConfig from "@/configs/envConfig";
 export const extractFile = (val) => {
   if (!val) return null;
   if (val instanceof File || val instanceof Blob) return val;
-  if (typeof FileList !== "undefined" && val instanceof FileList && val.length > 0) {
+  if (
+    typeof FileList !== "undefined" &&
+    val instanceof FileList &&
+    val.length > 0
+  ) {
     return val[0];
   }
   if (Array.isArray(val) && val.length > 0) {
@@ -39,7 +43,8 @@ export const resolveImageUrl = (url) => {
   }
 
   const baseNormalized = base.endsWith("/") ? base : `${base}/`;
-  const baseHasUploads = /\/uploads\/?$/i.test(base) || /\/api\/uploads\/?$/i.test(base);
+  const baseHasUploads =
+    /\/uploads\/?$/i.test(base) || /\/api\/uploads\/?$/i.test(base);
 
   let cleanRelative = trimmed.replace(/^\/+/, "");
   if (baseHasUploads) {

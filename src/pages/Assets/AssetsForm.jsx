@@ -233,15 +233,16 @@ const AssetsForm = ({ id, data, refetch }) => {
               setSelectedModelFile(null); // clear staged state so it no longer appears pending
               setDeleteExistingFile(false); // clear staged deletion flag
 
-              const completedFile = queueItem.result?.file || queueItem.result || {
-                main_file: upload.name,
-                file_type: "." + upload.name.split(".").pop(),
-                file_size: upload.size,
-                upload_status: "completed",
-                upload_progress: 100,
-                uploaded_chunks: upload.totalChunks,
-                total_chunks: upload.totalChunks,
-              };
+              const completedFile = queueItem.result?.file ||
+                queueItem.result || {
+                  main_file: upload.name,
+                  file_type: "." + upload.name.split(".").pop(),
+                  file_size: upload.size,
+                  upload_status: "completed",
+                  upload_progress: 100,
+                  uploaded_chunks: upload.totalChunks,
+                  total_chunks: upload.totalChunks,
+                };
 
               setExistingFile(completedFile);
               lastUploadedFileRef.current = completedFile; // Lock in the newly uploaded file to guard against stale server refetches

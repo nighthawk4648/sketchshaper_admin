@@ -133,10 +133,12 @@ const Fileinput = ({
             control={control}
             render={({ field: { onChange, onBlur, value, name, ref } }) => {
               // Safely extract file from selectedFile prop or Controller value
-              const fileToShow = extractFile(selectedFile) || extractFile(value);
+              const fileToShow =
+                extractFile(selectedFile) || extractFile(value);
               const displayFileName = fileToShow?.name;
               const isValidFile = Boolean(
-                fileToShow && (fileToShow instanceof File || fileToShow instanceof Blob),
+                fileToShow &&
+                (fileToShow instanceof File || fileToShow instanceof Blob),
               );
 
               return (
@@ -173,14 +175,19 @@ const Fileinput = ({
                             {displayFileName}
                           </span>
                         )}
-                        {!displayFileName && !isDefaultCleared && defaultUrl && (
-                          <span className="text-slate-500 dark:text-slate-400 text-xs">
-                            {defaultUrl.split("/").pop()}
-                          </span>
-                        )}
-                        {!displayFileName && (!defaultUrl || isDefaultCleared) && (
-                          <span className="text-slate-400">{placeholder}</span>
-                        )}
+                        {!displayFileName &&
+                          !isDefaultCleared &&
+                          defaultUrl && (
+                            <span className="text-slate-500 dark:text-slate-400 text-xs">
+                              {defaultUrl.split("/").pop()}
+                            </span>
+                          )}
+                        {!displayFileName &&
+                          (!defaultUrl || isDefaultCleared) && (
+                            <span className="text-slate-400">
+                              {placeholder}
+                            </span>
+                          )}
                       </span>
                     )}
 
