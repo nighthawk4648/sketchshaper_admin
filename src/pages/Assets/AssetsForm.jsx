@@ -506,6 +506,11 @@ const AssetsForm = ({ id, data, refetch }) => {
         toast.error("Failed to start 3D model upload. Please retry saving.");
         // Retain selectedModelFile so the user doesn't lose their file selection on sync failure
       }
+    } else if (createdAsset) {
+      setIsAssetCreated(true);
+      if (!id) {
+        setTimeout(() => navigate("/admin/assets"), 1200);
+      }
     }
   };
 
@@ -1022,6 +1027,36 @@ const AssetsForm = ({ id, data, refetch }) => {
             </div>
           </Card>
         </div>
+      </div>
+
+      {/* Bottom Sticky Action Bar */}
+      <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-700 mt-6">
+        <Button
+          type="button"
+          onClick={() => navigate(-1)}
+          text="Cancel"
+          className="btn-light"
+        />
+        <Button
+          isLoading={isLoading || isUploading}
+          type="submit"
+          text={
+            isUploading && uploads.length > 0
+              ? `Uploading... ${uploads[0]?.progress?.toFixed(0) ?? 0}%`
+              : id
+                ? "Update Asset"
+                : "Create Asset"
+          }
+          className="btn-dark"
+        />
+        {isAssetCreated && (
+          <Button
+            type="button"
+            onClick={() => navigate(-1)}
+            text="Done"
+            className="btn-success"
+          />
+        )}
       </div>
     </form>
   );
