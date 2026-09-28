@@ -250,10 +250,8 @@ const AssetsForm = ({ id, data, refetch }) => {
               dispatch(apiSlice.util.invalidateTags(["assets"]));
               if (refetch) refetch();
 
-              // Auto-redirect only in Create mode (Edit mode stays on the edit page)
-              if (!id) {
-                setTimeout(() => navigate("/admin/assets"), 1500);
-              }
+              // Auto-redirect to assets catalog after successful server-side completion
+              setTimeout(() => navigate("/admin/assets"), 1500);
             }
             // Show toast notification on failure
             if (queueItem.status === "failed" && upload.status !== "failed") {
@@ -508,46 +506,78 @@ const AssetsForm = ({ id, data, refetch }) => {
       }
     } else if (createdAsset) {
       setIsAssetCreated(true);
-      if (!id) {
-        setTimeout(() => navigate("/admin/assets"), 1200);
-      }
+      setTimeout(() => navigate("/admin/assets"), 1200);
     }
   };
 
+  const isInitializedRef = useRef(false);
+
+  // Populate form fields only when edit-mode asset data arrives, or once on mount in create mode
   useEffect(() => {
-    reset({
-      name: data?.name,
-      resolution: data?.resolution,
-      short_description: data?.short_description,
-      sub_category_id: data?.sub_category?.id,
-      cover_alt: data?.cover_alt || "",
-      images:
-        data?.images && data.images.length > 0
-          ? data.images.map((img) => ({
-              id: img.id,
-              defaultUrl: img.image,
-              image: img.image,
-              alt: img.alt || "",
-              tempId: null,
-            }))
-          : [
-              {
-                id: null,
-                defaultUrl: null,
-                image: null,
-                alt: "",
-                tempId:
-                  typeof crypto !== "undefined" && crypto.randomUUID
-                    ? crypto.randomUUID()
-                    : `temp_${Date.now()}`,
-              },
-            ],
+    if (data) {
+      reset({
+        name: data?.name || "",
+        resolution: data?.resolution || "",
+        short_description: data?.short_description || "",
+        sub_category_id: data?.sub_category?.id || "",
+        cover_alt: data?.cover_alt || "",
+        images:
+          data?.images && data.images.length > 0
+            ? data.images.map((img) => ({
+                id: img.id,
+                defaultUrl: img.image,
+                image: img.image,
+                alt: img.alt || "",
+                tempId: null,
+              }))
+            : [
+                {
+                  id: null,
+                  defaultUrl: null,
+                  image: null,
+                  alt: "",
+                  tempId:
+                    typeof crypto !== "undefined" && crypto.randomUUID
+                      ? crypto.randomUUID()
+                      : `temp_${Date.now()}`,
+                },
+              ],
 
-      meta_title: data?.meta_title,
-      meta_description: data?.meta_description,
-      keywords: data?.keywords || "",
-    });
+        meta_title: data?.meta_title || "",
+        meta_description: data?.meta_description || "",
+        keywords: data?.keywords || "",
+      });
+      isInitializedRef.current = true;
+    } else if (!id && !isInitializedRef.current) {
+      // In create mode, initialize the default blank form once on mount
+      reset({
+        name: "",
+        resolution: "",
+        short_description: "",
+        sub_category_id: "",
+        cover_alt: "",
+        images: [
+          {
+            id: null,
+            defaultUrl: null,
+            image: null,
+            alt: "",
+            tempId:
+              typeof crypto !== "undefined" && crypto.randomUUID
+                ? crypto.randomUUID()
+                : `temp_${Date.now()}`,
+          },
+        ],
+        meta_title: "",
+        meta_description: "",
+        keywords: "",
+      });
+      isInitializedRef.current = true;
+    }
+  }, [data, id, reset]);
 
+  // Synchronize 3D model state from server independently from form fields
+  useEffect(() => {
     // Guard against overwriting local 3D file state during active upload, staging, or deletion
     if (isUploading || selectedModelFile || deleteExistingFile) {
       return;
@@ -565,10 +595,10 @@ const AssetsForm = ({ id, data, refetch }) => {
     // Normal synchronization from server
     if (data?.file) {
       setExistingFile(data.file);
-    } else {
+    } else if (id) {
       setExistingFile(null);
     }
-  }, [data, reset, isUploading, selectedModelFile, deleteExistingFile]);
+  }, [data?.file, isUploading, selectedModelFile, deleteExistingFile, id]);
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
@@ -590,6 +620,7 @@ const AssetsForm = ({ id, data, refetch }) => {
             onClick={() => navigate(-1)}
             text="Cancel"
             className="btn-light btn-sm"
+            disabled={isLoading || isUploading}
           />
           {isAssetCreated && (
             <Button
@@ -597,6 +628,7 @@ const AssetsForm = ({ id, data, refetch }) => {
               onClick={() => navigate(-1)}
               text="Done"
               className="btn-success btn-sm"
+              disabled={isLoading || isUploading}
             />
           )}
           <Button
@@ -604,7 +636,9 @@ const AssetsForm = ({ id, data, refetch }) => {
             type="submit"
             text={
               isUploading && uploads.length > 0
-                ? `Uploading... ${uploads[0]?.progress?.toFixed(0) ?? 0}%`
+                ? uploads[0]?.progress >= 100
+                  ? "Finalizing..."
+                  : `Uploading... ${uploads[0]?.progress?.toFixed(0) ?? 0}%`
                 : id
                   ? "Update Asset"
                   : "Create Asset"
@@ -921,7 +955,10 @@ const AssetsForm = ({ id, data, refetch }) => {
                               upload.status,
                             )}`}
                           >
-                            {upload.status.toUpperCase()}
+                            {upload.progress >= 100 &&
+                            upload.status === "uploading"
+                              ? "FINALIZING"
+                              : upload.status.toUpperCase()}
                           </span>
                         </div>
                         <div className="text-right whitespace-nowrap">
@@ -1036,18 +1073,7 @@ const AssetsForm = ({ id, data, refetch }) => {
           onClick={() => navigate(-1)}
           text="Cancel"
           className="btn-light"
-        />
-        <Button
-          isLoading={isLoading || isUploading}
-          type="submit"
-          text={
-            isUploading && uploads.length > 0
-              ? `Uploading... ${uploads[0]?.progress?.toFixed(0) ?? 0}%`
-              : id
-                ? "Update Asset"
-                : "Create Asset"
-          }
-          className="btn-dark"
+          disabled={isLoading || isUploading}
         />
         {isAssetCreated && (
           <Button
@@ -1055,8 +1081,23 @@ const AssetsForm = ({ id, data, refetch }) => {
             onClick={() => navigate(-1)}
             text="Done"
             className="btn-success"
+            disabled={isLoading || isUploading}
           />
         )}
+        <Button
+          isLoading={isLoading || isUploading}
+          type="submit"
+          text={
+            isUploading && uploads.length > 0
+              ? uploads[0]?.progress >= 100
+                ? "Finalizing..."
+                : `Uploading... ${uploads[0]?.progress?.toFixed(0) ?? 0}%`
+              : id
+                ? "Update Asset"
+                : "Create Asset"
+          }
+          className="btn-dark"
+        />
       </div>
     </form>
   );

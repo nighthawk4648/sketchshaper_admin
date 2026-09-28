@@ -27,8 +27,8 @@ const useSubmit = (id, hook, redirect) => {
       if (data?.status !== "success") {
         throw new Error(data?.message || "Error occurred from server!");
       }
-      reset();
       if (redirect !== false) {
+        reset();
         navigate(redirect ? redirect : -1);
       }
       toast.success(data?.message);
