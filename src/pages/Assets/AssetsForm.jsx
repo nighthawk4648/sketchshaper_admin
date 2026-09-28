@@ -370,11 +370,12 @@ const AssetsForm = ({ id, data, refetch }) => {
   };
 
   const formatBytes = (bytes) => {
-    if (bytes === 0) return "0 Bytes";
+    const num = Number(bytes);
+    if (!bytes || isNaN(num) || num <= 0) return "";
     const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(num) / Math.log(k));
+    return parseFloat((num / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const getStatusColor = (status) => {
@@ -457,12 +458,19 @@ const AssetsForm = ({ id, data, refetch }) => {
     formData.append("newImageAlts", JSON.stringify(newImageAlts));
     formData.append("existingImageAlts", JSON.stringify(existingImageAlts));
 
-    // Always append size: auto-computed from file if selected, otherwise empty string
-    // (backend will overwrite with actual size after upload completes)
-    formData.append(
-      "size",
-      selectedModelFile ? formatBytes(selectedModelFile.size) : "",
-    );
+    // Compute size non-destructively:
+    // 1. If a new 3D file is staged, use its size
+    // 2. If existing file is explicitly deleted, send empty string
+    // 3. If existing file remains untouched, preserve its size from file_size or existing data.size
+    // 4. Otherwise empty string
+    const computedSize = selectedModelFile
+      ? formatBytes(selectedModelFile.size)
+      : deleteExistingFile
+        ? ""
+        : existingFile?.file_size
+          ? formatBytes(Number(existingFile.file_size))
+          : (data?.size || "");
+    formData.append("size", computedSize);
 
     // Append staged image removals — backend reads removedImageIds[0], removedImageIds[1], ...
     removedImageIds.forEach((imgId, i) => {

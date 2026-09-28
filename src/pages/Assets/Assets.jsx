@@ -73,7 +73,25 @@ const Assets = () => {
     {
       Header: "Size",
       accessor: "size",
-      Cell: (row) => <span>{row?.cell?.value || "—"}</span>,
+      Cell: (row) => {
+        const val = row?.cell?.value;
+        if (val && String(val).trim() !== "") {
+          return <span>{val}</span>;
+        }
+        const file = row?.cell?.row?.original?.file;
+        if (file?.file_size) {
+          const num = Number(file.file_size);
+          if (!isNaN(num) && num > 0) {
+            const k = 1024;
+            const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+            const i = Math.floor(Math.log(num) / Math.log(k));
+            const formatted =
+              parseFloat((num / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+            return <span>{formatted}</span>;
+          }
+        }
+        return <span>—</span>;
+      },
     },
     {
       Header: "Resolution",
