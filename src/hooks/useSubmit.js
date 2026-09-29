@@ -16,13 +16,30 @@ const useSubmit = (id, hook, redirect, formOptions = {}) => {
     setValue,
   } = useForm(formOptions);
 
-  const [submit, { isLoading, isSuccess, isError, error }] = hook();
+  const isDualHook =
+    hook && typeof hook === "object" && hook.create && hook.update;
+  const [createSubmit, createStatus] = isDualHook ? hook.create() : [null, {}];
+  const [updateSubmit, updateStatus] = isDualHook ? hook.update() : [null, {}];
+  const [singleSubmit, singleStatus] =
+    !isDualHook && typeof hook === "function" ? hook() : [null, {}];
 
-  const onSubmit = async (preparedData) => {
+  const isLoading = isDualHook
+    ? Boolean(createStatus?.isLoading || updateStatus?.isLoading)
+    : Boolean(singleStatus?.isLoading);
+
+  const onSubmit = async (preparedData, customId) => {
     try {
-      const response = await (id
-        ? submit({ id, data: preparedData })
-        : submit(preparedData));
+      const targetId = customId !== undefined ? customId : id;
+      let response;
+      if (isDualHook) {
+        response = await (targetId
+          ? updateSubmit({ id: targetId, data: preparedData })
+          : createSubmit(preparedData));
+      } else {
+        response = await (targetId
+          ? singleSubmit({ id: targetId, data: preparedData })
+          : singleSubmit(preparedData));
+      }
 
       if (response?.error) {
         const errorMsg =

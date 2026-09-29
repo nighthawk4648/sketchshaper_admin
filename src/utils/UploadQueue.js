@@ -132,6 +132,13 @@ class UploadQueue {
   }
 
   clear() {
+    this.active.forEach((item) => {
+      try {
+        item.uploader?.cancel?.();
+      } catch (e) {
+        console.error("Error cancelling active upload on clear:", e);
+      }
+    });
     this.queue = [];
     this.active = [];
     this.completed = [];

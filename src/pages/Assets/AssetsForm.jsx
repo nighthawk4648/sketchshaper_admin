@@ -179,7 +179,9 @@ const AssetsForm = ({ id, data, refetch }) => {
   const uploadQueueRef = useRef(null);
   const fileInputRef = useRef(null);
   const lastUploadedFileRef = useRef(null); // Tracks ground truth of locally uploaded file
+  const redirectTimerRef = useRef(null); // Managed timer ref for cleanup on unmount
   const [uploads, setUploads] = useState([]);
+  const [activeId, setActiveId] = useState(id || null);
   const [assetId, setAssetId] = useState(id || null);
   const [isSubmittedSuccess, setIsSubmittedSuccess] = useState(false);
   const [existingFile, setExistingFile] = useState(data?.file || null);
@@ -187,6 +189,15 @@ const AssetsForm = ({ id, data, refetch }) => {
   const [isUploading, setIsUploading] = useState(false); // locks button during chunked upload
   const [removedImageIds, setRemovedImageIds] = useState([]); // DB AssetImage ids staged for deletion on save
   const [deleteExistingFile, setDeleteExistingFile] = useState(false); // flag to delete current 3D file on save
+
+  // Clear any pending redirect timers on unmount to avoid memory leaks
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) {
+        clearTimeout(redirectTimerRef.current);
+      }
+    };
+  }, []);
 
   console.log("will be update", data);
 
@@ -248,8 +259,11 @@ const AssetsForm = ({ id, data, refetch }) => {
     setValue,
     isLoading,
   } = useSubmit(
-    id,
-    id ? useUpdateAssetsMutation : useCreateAssetsMutation,
+    activeId,
+    {
+      create: useCreateAssetsMutation,
+      update: useUpdateAssetsMutation,
+    },
     false,
     {
       defaultValues: initialFormValues,
@@ -305,12 +319,18 @@ const AssetsForm = ({ id, data, refetch }) => {
               if (refetch) refetch();
 
               // Auto-redirect to assets catalog after successful server-side completion
-              setTimeout(() => navigate("/admin/assets"), 1500);
+              if (redirectTimerRef.current)
+                clearTimeout(redirectTimerRef.current);
+              redirectTimerRef.current = setTimeout(
+                () => navigate("/admin/assets"),
+                1500,
+              );
             }
             // Show toast notification on failure
             if (queueItem.status === "failed" && upload.status !== "failed") {
               toast.error(`❌ Failed to upload ${upload.name}`);
               setIsUploading(false); // release button lock on failure
+              setIsSubmittedSuccess(false); // ensure button is unlocked for retry
               // Do NOT transition to ATTACHED; do not set existingFile
             }
             return {
@@ -553,6 +573,18 @@ const AssetsForm = ({ id, data, refetch }) => {
     // Step 1: Create / Update asset record
     const createdAsset = await onSubmit(formData);
 
+    // If an asset was newly created in this session, immediately transition the form
+    // into edit mode with activeId so any retry (if 3D upload fails) updates this asset rather than duplicating it!
+    if (createdAsset?.id && !activeId) {
+      setActiveId(createdAsset.id);
+      setAssetId(createdAsset.id);
+      window.history.replaceState(
+        null,
+        "",
+        `/admin/assets/edit/${createdAsset.id}`,
+      );
+    }
+
     // Clear staged removal state after successful save
     if (createdAsset) {
       setRemovedImageIds([]);
@@ -565,38 +597,69 @@ const AssetsForm = ({ id, data, refetch }) => {
     const targetId = createdAsset?.id || assetId;
     if (selectedModelFile && targetId) {
       setAssetId(targetId);
-      setIsSubmittedSuccess(true);
       const fileToUpload = selectedModelFile;
       try {
         const queuedId = startChunkedUpload(fileToUpload, targetId);
         if (queuedId) {
+          setIsSubmittedSuccess(true);
           // File has been successfully accepted by the uploader queue; clear the staged state
           setSelectedModelFile(null);
         }
       } catch (err) {
         console.error("Failed to start chunked upload:", err);
         setIsUploading(false);
+        setIsSubmittedSuccess(false);
         toast.error("Failed to start 3D model upload. Please retry saving.");
         // Retain selectedModelFile so the user doesn't lose their file selection on sync failure
       }
     } else if (createdAsset) {
       setIsSubmittedSuccess(true);
-      setTimeout(() => navigate("/admin/assets"), 1200);
+      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
+      redirectTimerRef.current = setTimeout(
+        () => navigate("/admin/assets"),
+        1200,
+      );
     }
   };
 
   const onFormError = (formErrors) => {
     console.warn("Validation errors:", formErrors);
-    const firstKey = Object.keys(formErrors)[0];
-    if (firstKey) {
-      const msg =
-        formErrors[firstKey]?.message ||
-        `Please check the ${firstKey.replace(/_/g, " ")} field`;
-      toast.error(msg);
-      const el = document.querySelector(`[name="${firstKey}"]`);
+    const getFirstError = (errs, currentPath = "") => {
+      if (!errs || typeof errs !== "object") return null;
+      for (const key of Object.keys(errs)) {
+        const val = errs[key];
+        const nextPath = currentPath ? `${currentPath}.${key}` : key;
+        if (val?.message && typeof val.message === "string") {
+          return { field: nextPath, leafKey: key, message: val.message };
+        }
+        if (typeof val === "object" && val !== null) {
+          const nested = getFirstError(val, nextPath);
+          if (nested) return nested;
+        }
+      }
+      return null;
+    };
+
+    const firstErr = getFirstError(formErrors);
+    if (firstErr) {
+      toast.error(firstErr.message);
+      let el = null;
+      try {
+        el =
+          document.querySelector(`[name="${firstErr.field}"]`) ||
+          document.querySelector(`[name="${firstErr.leafKey}"]`) ||
+          document.querySelector(`[name*="${firstErr.leafKey}"]`);
+      } catch (e) {
+        el = document.querySelector(`[name="${firstErr.leafKey}"]`);
+      }
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
         el.focus?.();
+      }
+    } else {
+      const firstKey = Object.keys(formErrors)[0];
+      if (firstKey) {
+        toast.error(`Please check the ${firstKey.replace(/_/g, " ")} field`);
       }
     }
   };
@@ -708,14 +771,14 @@ const AssetsForm = ({ id, data, refetch }) => {
             type="submit"
             text={
               isSubmittedSuccess
-                ? id
+                ? id || activeId
                   ? "Asset Updated"
                   : "Asset Created"
                 : isUploading && uploads.length > 0
                   ? uploads[0]?.progress >= 100
                     ? "Finalizing..."
                     : `Uploading... ${uploads[0]?.progress?.toFixed(0) ?? 0}%`
-                  : id
+                  : id || activeId
                     ? "Update Asset"
                     : "Create Asset"
             }
@@ -1168,14 +1231,14 @@ const AssetsForm = ({ id, data, refetch }) => {
           type="submit"
           text={
             isSubmittedSuccess
-              ? id
+              ? id || activeId
                 ? "Asset Updated"
                 : "Asset Created"
               : isUploading && uploads.length > 0
                 ? uploads[0]?.progress >= 100
                   ? "Finalizing..."
                   : `Uploading... ${uploads[0]?.progress?.toFixed(0) ?? 0}%`
-                : id
+                : id || activeId
                   ? "Update Asset"
                   : "Create Asset"
           }

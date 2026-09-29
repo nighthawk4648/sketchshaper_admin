@@ -14,6 +14,7 @@ class AssetsChunkedUploader {
     this.uploadedChunks = new Set();
     this.apiBaseUrl = (apiBaseUrl || "").replace(/\/+$/, "");
     this.assetId = assetId;
+    this.activeChunkAbortController = null;
   }
 
   getHeaders(extraHeaders = {}) {
@@ -91,12 +92,15 @@ class AssetsChunkedUploader {
     formData.append("chunkIndex", chunkIndex);
     formData.append("chunk", chunk);
 
+    this.activeChunkAbortController = new AbortController();
+
     try {
       const response = await axios.post(
         `${this.apiBaseUrl}/assets/upload-chunk`,
         formData,
         {
           headers: this.getHeaders({ "Content-Type": "multipart/form-data" }),
+          signal: this.activeChunkAbortController.signal,
         },
       );
 
@@ -113,8 +117,18 @@ class AssetsChunkedUploader {
 
       return true;
     } catch (error) {
+      if (
+        axios.isCancel(error) ||
+        error?.name === "CanceledError" ||
+        error?.name === "AbortError"
+      ) {
+        console.log(`Chunk ${chunkIndex} upload aborted.`);
+        return false;
+      }
       console.error(`Failed to upload chunk ${chunkIndex}:`, error);
       return false;
+    } finally {
+      this.activeChunkAbortController = null;
     }
   }
 
@@ -206,6 +220,13 @@ class AssetsChunkedUploader {
 
   async cancel() {
     this.isCancelled = true;
+    if (this.activeChunkAbortController) {
+      try {
+        this.activeChunkAbortController.abort();
+      } catch (e) {
+        console.error("Error aborting active chunk:", e);
+      }
+    }
     try {
       await axios.delete(
         `${this.apiBaseUrl}/assets/cancel/${this.uploadSessionId}`,

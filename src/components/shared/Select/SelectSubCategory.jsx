@@ -33,8 +33,12 @@ const SelectSubCategory = ({
         defaultValue={defaultValue}
         render={({ field: { onChange, onBlur, value, ref } }) => (
           <SelectCustom
-            isMarked={isMarked}
+            name={name || "sub_category_id"}
+            isMarked={isMarked || Boolean(errors?.[name || "sub_category_id"])}
             defaultValue={defaultValue}
+            selectedValue={options?.find(
+              (val) => val.value === (value || defaultValue),
+            )}
             options={options}
             onChange={onChange}
             setState={setState}
