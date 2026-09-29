@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
-const useSubmit = (id, hook, redirect) => {
+const useSubmit = (id, hook, redirect, formOptions = {}) => {
   const navigate = useNavigate();
 
   const {
@@ -14,15 +14,25 @@ const useSubmit = (id, hook, redirect) => {
     handleSubmit,
     watch,
     setValue,
-  } = useForm();
+  } = useForm(formOptions);
 
   const [submit, { isLoading, isSuccess, isError, error }] = hook();
 
   const onSubmit = async (preparedData) => {
     try {
-      const { data } = await (id
+      const response = await (id
         ? submit({ id, data: preparedData })
         : submit(preparedData));
+
+      if (response?.error) {
+        const errorMsg =
+          response.error?.data?.message ||
+          response.error?.message ||
+          "Error occurred from server!";
+        throw new Error(errorMsg);
+      }
+
+      const { data } = response;
 
       if (data?.status !== "success") {
         throw new Error(data?.message || "Error occurred from server!");

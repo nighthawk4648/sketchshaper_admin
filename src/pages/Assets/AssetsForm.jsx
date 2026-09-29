@@ -87,62 +87,67 @@ const GalleryImageCard = ({
         </button>
 
         {/* Image Preview or File Picker */}
-        {previewSrc ? (
-          <div className="w-full h-full rounded-xl overflow-hidden p-1 flex items-center justify-center bg-white dark:bg-slate-900">
-            <img
-              src={previewSrc}
-              alt={`Gallery Image ${index + 1}`}
-              className="w-full h-full object-contain rounded-lg"
-            />
-          </div>
-        ) : (
-          <Controller
-            name={`images.${index}.image`}
-            control={control}
-            render={({ field: { onChange, ref } }) => (
-              <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer p-3 text-center text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition group">
-                <input
-                  type="file"
-                  className="hidden"
-                  ref={ref}
-                  accept="image/*"
-                  onChange={(e) => {
-                    const files = e.target.files;
-                    onChange(files);
-                    if (
-                      files &&
-                      files.length > 0 &&
-                      !allImages?.[index]?.tempId
-                    ) {
-                      const newTempId =
-                        typeof crypto !== "undefined" && crypto.randomUUID
-                          ? crypto.randomUUID()
-                          : `temp_${Date.now()}`;
-                      setValue(`images.${index}.tempId`, newTempId);
-                    }
-                  }}
-                />
-                <div className="w-9 h-9 rounded-full bg-slate-200/70 dark:bg-slate-700/70 flex items-center justify-center mb-1 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40 transition">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-5 h-5 text-slate-500 group-hover:text-blue-600 transition"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
-                    />
-                  </svg>
+        <Controller
+          name={`images.${index}.image`}
+          control={control}
+          render={({ field: { onChange, ref } }) => (
+            <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer p-1 text-center relative overflow-hidden rounded-xl">
+              <input
+                type="file"
+                className="hidden"
+                ref={ref}
+                accept="image/*"
+                onChange={(e) => {
+                  const files = e.target.files;
+                  onChange(files);
+                  if (
+                    files &&
+                    files.length > 0 &&
+                    !allImages?.[index]?.tempId
+                  ) {
+                    const newTempId =
+                      typeof crypto !== "undefined" && crypto.randomUUID
+                        ? crypto.randomUUID()
+                        : `temp_${Date.now()}`;
+                    setValue(`images.${index}.tempId`, newTempId);
+                  }
+                }}
+              />
+              {previewSrc ? (
+                <div className="w-full h-full rounded-xl overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 group">
+                  <img
+                    src={previewSrc}
+                    alt={`Gallery Image ${index + 1}`}
+                    className="w-full h-full object-contain rounded-lg"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-medium rounded-xl">
+                    Change Photo
+                  </div>
                 </div>
-                <span className="text-xs font-medium">Select Photo</span>
-              </label>
-            )}
-          />
-        )}
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center p-3 text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition group">
+                  <div className="w-9 h-9 rounded-full bg-slate-200/70 dark:bg-slate-700/70 flex items-center justify-center mb-1 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40 transition">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-5 h-5 text-slate-500 group-hover:text-blue-600 transition"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
+                      />
+                    </svg>
+                  </div>
+                  <span className="text-xs font-medium">Select Photo</span>
+                </div>
+              )}
+            </label>
+          )}
+        />
       </div>
 
       {/* Alt Text Input below image */}
@@ -176,7 +181,7 @@ const AssetsForm = ({ id, data, refetch }) => {
   const lastUploadedFileRef = useRef(null); // Tracks ground truth of locally uploaded file
   const [uploads, setUploads] = useState([]);
   const [assetId, setAssetId] = useState(id || null);
-  const [isAssetCreated, setIsAssetCreated] = useState(!!id);
+  const [isSubmittedSuccess, setIsSubmittedSuccess] = useState(false);
   const [existingFile, setExistingFile] = useState(data?.file || null);
   const [selectedModelFile, setSelectedModelFile] = useState(null); // staged file before submit
   const [isUploading, setIsUploading] = useState(false); // locks button during chunked upload
@@ -184,6 +189,52 @@ const AssetsForm = ({ id, data, refetch }) => {
   const [deleteExistingFile, setDeleteExistingFile] = useState(false); // flag to delete current 3D file on save
 
   console.log("will be update", data);
+
+  const defaultBlankForm = {
+    name: "",
+    resolution: "",
+    short_description: "",
+    sub_category_id: "",
+    cover_alt: "",
+    images: [
+      {
+        id: null,
+        defaultUrl: null,
+        image: null,
+        alt: "",
+        tempId:
+          typeof crypto !== "undefined" && crypto.randomUUID
+            ? crypto.randomUUID()
+            : `temp_${Date.now()}`,
+      },
+    ],
+    meta_title: "",
+    meta_description: "",
+    keywords: "",
+  };
+
+  const initialFormValues = data
+    ? {
+        name: data?.name || "",
+        resolution: data?.resolution || "",
+        short_description: data?.short_description || "",
+        sub_category_id: data?.sub_category?.id || data?.sub_category_id || "",
+        cover_alt: data?.cover_alt || "",
+        images:
+          data?.images && data.images.length > 0
+            ? data.images.map((img) => ({
+                id: img.id,
+                defaultUrl: img.image,
+                image: img.image,
+                alt: img.alt || "",
+                tempId: null,
+              }))
+            : defaultBlankForm.images,
+        meta_title: data?.meta_title || "",
+        meta_description: data?.meta_description || "",
+        keywords: data?.keywords || "",
+      }
+    : defaultBlankForm;
 
   const {
     register,
@@ -200,6 +251,9 @@ const AssetsForm = ({ id, data, refetch }) => {
     id,
     id ? useUpdateAssetsMutation : useCreateAssetsMutation,
     false,
+    {
+      defaultValues: initialFormValues,
+    },
   );
 
   const { append, remove, fields } = useFieldArray({
@@ -396,22 +450,35 @@ const AssetsForm = ({ id, data, refetch }) => {
   const handleFormSubmit = async (data) => {
     console.log("data", data);
 
+    // Validate Cover Image on Create
+    const coverValue = data.cover;
+    const hasCover =
+      coverValue instanceof File ||
+      coverValue instanceof Blob ||
+      (coverValue && coverValue[0] instanceof File) ||
+      (typeof coverValue === "string" && coverValue.trim() !== "");
+
+    if (!id && !hasCover) {
+      toast.error("Please select a Primary Cover Image");
+      return;
+    }
+
     const formData = new FormData();
 
     const keys = Object.keys(data);
 
     keys.forEach((key) => {
       if (["cover"].includes(key)) {
-        const coverValue = data[key];
+        const coverVal = data[key];
         const hasNewCover =
-          coverValue instanceof File ||
-          coverValue instanceof Blob ||
-          (coverValue && coverValue[0] instanceof File);
+          coverVal instanceof File ||
+          coverVal instanceof Blob ||
+          (coverVal && coverVal[0] instanceof File);
 
         if (hasNewCover) {
-          formData.append(key, coverValue[0] || coverValue);
-        } else if (typeof coverValue === "string" && coverValue.trim() !== "") {
-          formData.append(key, coverValue);
+          formData.append(key, coverVal[0] || coverVal);
+        } else if (typeof coverVal === "string" && coverVal.trim() !== "") {
+          formData.append(key, coverVal);
         }
       } else if (key === "images") {
         // Handled below with tempId and alt association
@@ -469,7 +536,7 @@ const AssetsForm = ({ id, data, refetch }) => {
         ? ""
         : existingFile?.file_size
           ? formatBytes(Number(existingFile.file_size))
-          : (data?.size || "");
+          : data?.size || "";
     formData.append("size", computedSize);
 
     // Append staged image removals — backend reads removedImageIds[0], removedImageIds[1], ...
@@ -498,7 +565,7 @@ const AssetsForm = ({ id, data, refetch }) => {
     const targetId = createdAsset?.id || assetId;
     if (selectedModelFile && targetId) {
       setAssetId(targetId);
-      setIsAssetCreated(true);
+      setIsSubmittedSuccess(true);
       const fileToUpload = selectedModelFile;
       try {
         const queuedId = startChunkedUpload(fileToUpload, targetId);
@@ -513,21 +580,38 @@ const AssetsForm = ({ id, data, refetch }) => {
         // Retain selectedModelFile so the user doesn't lose their file selection on sync failure
       }
     } else if (createdAsset) {
-      setIsAssetCreated(true);
+      setIsSubmittedSuccess(true);
       setTimeout(() => navigate("/admin/assets"), 1200);
     }
   };
 
-  const isInitializedRef = useRef(false);
+  const onFormError = (formErrors) => {
+    console.warn("Validation errors:", formErrors);
+    const firstKey = Object.keys(formErrors)[0];
+    if (firstKey) {
+      const msg =
+        formErrors[firstKey]?.message ||
+        `Please check the ${firstKey.replace(/_/g, " ")} field`;
+      toast.error(msg);
+      const el = document.querySelector(`[name="${firstKey}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.focus?.();
+      }
+    }
+  };
 
-  // Populate form fields only when edit-mode asset data arrives, or once on mount in create mode
+  const isInitializedRef = useRef(false);
+  const lastLoadedIdRef = useRef(null);
+
+  // Populate form fields only when edit-mode asset data arrives (once per entity ID)
   useEffect(() => {
-    if (data) {
+    if (data && (!isInitializedRef.current || lastLoadedIdRef.current !== id)) {
       reset({
         name: data?.name || "",
         resolution: data?.resolution || "",
         short_description: data?.short_description || "",
-        sub_category_id: data?.sub_category?.id || "",
+        sub_category_id: data?.sub_category?.id || data?.sub_category_id || "",
         cover_alt: data?.cover_alt || "",
         images:
           data?.images && data.images.length > 0
@@ -556,31 +640,7 @@ const AssetsForm = ({ id, data, refetch }) => {
         keywords: data?.keywords || "",
       });
       isInitializedRef.current = true;
-    } else if (!id && !isInitializedRef.current) {
-      // In create mode, initialize the default blank form once on mount
-      reset({
-        name: "",
-        resolution: "",
-        short_description: "",
-        sub_category_id: "",
-        cover_alt: "",
-        images: [
-          {
-            id: null,
-            defaultUrl: null,
-            image: null,
-            alt: "",
-            tempId:
-              typeof crypto !== "undefined" && crypto.randomUUID
-                ? crypto.randomUUID()
-                : `temp_${Date.now()}`,
-          },
-        ],
-        meta_title: "",
-        meta_description: "",
-        keywords: "",
-      });
-      isInitializedRef.current = true;
+      lastLoadedIdRef.current = id;
     }
   }, [data, id, reset]);
 
@@ -609,7 +669,10 @@ const AssetsForm = ({ id, data, refetch }) => {
   }, [data?.file, isUploading, selectedModelFile, deleteExistingFile, id]);
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+    <form
+      onSubmit={handleSubmit(handleFormSubmit, onFormError)}
+      className="space-y-6"
+    >
       {/* Top Header & Actions Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-700">
         <div>
@@ -630,7 +693,7 @@ const AssetsForm = ({ id, data, refetch }) => {
             className="btn-light btn-sm"
             disabled={isLoading || isUploading}
           />
-          {isAssetCreated && (
+          {isSubmittedSuccess && (
             <Button
               type="button"
               onClick={() => navigate(-1)}
@@ -641,15 +704,20 @@ const AssetsForm = ({ id, data, refetch }) => {
           )}
           <Button
             isLoading={isLoading || isUploading}
+            disabled={isLoading || isUploading || isSubmittedSuccess}
             type="submit"
             text={
-              isUploading && uploads.length > 0
-                ? uploads[0]?.progress >= 100
-                  ? "Finalizing..."
-                  : `Uploading... ${uploads[0]?.progress?.toFixed(0) ?? 0}%`
-                : id
-                  ? "Update Asset"
-                  : "Create Asset"
+              isSubmittedSuccess
+                ? id
+                  ? "Asset Updated"
+                  : "Asset Created"
+                : isUploading && uploads.length > 0
+                  ? uploads[0]?.progress >= 100
+                    ? "Finalizing..."
+                    : `Uploading... ${uploads[0]?.progress?.toFixed(0) ?? 0}%`
+                  : id
+                    ? "Update Asset"
+                    : "Create Asset"
             }
             className="btn-dark btn-sm"
           />
@@ -681,7 +749,9 @@ const AssetsForm = ({ id, data, refetch }) => {
                   <SelectSubCategory
                     control={control}
                     errors={errors}
-                    defaultValue={data?.sub_category?.id}
+                    defaultValue={
+                      data?.sub_category?.id || data?.sub_category_id
+                    }
                   />
                 </div>
                 <div>
@@ -1083,7 +1153,7 @@ const AssetsForm = ({ id, data, refetch }) => {
           className="btn-light"
           disabled={isLoading || isUploading}
         />
-        {isAssetCreated && (
+        {isSubmittedSuccess && (
           <Button
             type="button"
             onClick={() => navigate(-1)}
@@ -1094,15 +1164,20 @@ const AssetsForm = ({ id, data, refetch }) => {
         )}
         <Button
           isLoading={isLoading || isUploading}
+          disabled={isLoading || isUploading || isSubmittedSuccess}
           type="submit"
           text={
-            isUploading && uploads.length > 0
-              ? uploads[0]?.progress >= 100
-                ? "Finalizing..."
-                : `Uploading... ${uploads[0]?.progress?.toFixed(0) ?? 0}%`
-              : id
-                ? "Update Asset"
-                : "Create Asset"
+            isSubmittedSuccess
+              ? id
+                ? "Asset Updated"
+                : "Asset Created"
+              : isUploading && uploads.length > 0
+                ? uploads[0]?.progress >= 100
+                  ? "Finalizing..."
+                  : `Uploading... ${uploads[0]?.progress?.toFixed(0) ?? 0}%`
+                : id
+                  ? "Update Asset"
+                  : "Create Asset"
           }
           className="btn-dark"
         />
