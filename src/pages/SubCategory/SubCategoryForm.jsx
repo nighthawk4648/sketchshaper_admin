@@ -11,6 +11,7 @@ import {
   useUpdateSubCategoryMutation,
 } from "@/store/api/app/SubCategory/subCategoryApiSlice";
 
+import { stripHtml } from "@/utils/stripHtml";
 import { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -53,7 +54,11 @@ const SubCategoryForm = ({ id, data }) => {
         }
       } else {
         if (data[key] !== undefined && data[key] !== null) {
-          formData.append(key, data[key]);
+          const val =
+            key === "meta_description" || key === "meta_title"
+              ? stripHtml(data[key])
+              : data[key];
+          formData.append(key, val);
         }
       }
     });
@@ -66,8 +71,8 @@ const SubCategoryForm = ({ id, data }) => {
       name: data?.name,
       short_description: data?.short_description,
       category_id: data?.category_id,
-      meta_title: data?.meta_title || "",
-      meta_description: data?.meta_description || "",
+      meta_title: stripHtml(data?.meta_title || ""),
+      meta_description: stripHtml(data?.meta_description || ""),
       keywords: data?.keywords || "",
     });
   }, [data, reset]);
@@ -187,17 +192,16 @@ const SubCategoryForm = ({ id, data }) => {
                 error={errors?.meta_title}
               />
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Meta Description
-                </label>
-                <TextEditor
-                  name="meta_description"
-                  errors={errors}
-                  control={control}
-                  required={false}
-                />
-              </div>
+              <Textarea
+                name="meta_description"
+                register={register}
+                label="Meta Description"
+                type="textarea"
+                placeholder="Brief SEO description for search engines (recommended 150-160 characters)"
+                row={3}
+                required={false}
+                error={errors?.meta_description}
+              />
 
               <Textarea
                 name="keywords"

@@ -21,6 +21,20 @@ export const exportToExcel = (data, fileName) => {
     saveAs(blob, `${fileName}.xlsx`);
 };
 
+export const exportToCsv = (data, fileName) => {
+    // Convert the data to a worksheet
+    const worksheet = XLSX.utils.json_to_sheet(data);
+
+    // Convert the worksheet to CSV
+    const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
+
+    // Create a Blob from the CSV string
+    const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
+
+    // Save the file using FileSaver
+    saveAs(blob, `${fileName}.csv`);
+};
+
 const s2ab = (s) => {
     const buf = new ArrayBuffer(s.length);
     const view = new Uint8Array(buf);

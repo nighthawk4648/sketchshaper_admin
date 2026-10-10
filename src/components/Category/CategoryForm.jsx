@@ -12,7 +12,7 @@ import {
 import { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import TextEditor from "../shared/Select/TextEditor";
+import { stripHtml } from "@/utils/stripHtml";
 
 const CategoryForm = ({ id, data }) => {
   const { isAuth, auth } = useSelector((state) => state.auth);
@@ -49,7 +49,11 @@ const CategoryForm = ({ id, data }) => {
         }
       } else {
         if (data[key] !== undefined && data[key] !== null) {
-          formData.append(key, data[key]);
+          const val =
+            key === "meta_description" || key === "meta_title"
+              ? stripHtml(data[key])
+              : data[key];
+          formData.append(key, val);
         }
       }
     });
@@ -61,8 +65,8 @@ const CategoryForm = ({ id, data }) => {
     reset({
       name: data?.name,
       short_description: data?.short_description,
-      meta_title: data?.meta_title || "",
-      meta_description: data?.meta_description || "",
+      meta_title: stripHtml(data?.meta_title || ""),
+      meta_description: stripHtml(data?.meta_description || ""),
       keywords: data?.keywords || "",
     });
   }, [data, reset]);
@@ -167,17 +171,16 @@ const CategoryForm = ({ id, data }) => {
                 error={errors?.meta_title}
               />
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Meta Description
-                </label>
-                <TextEditor
-                  name="meta_description"
-                  errors={errors}
-                  control={control}
-                  required={false}
-                />
-              </div>
+              <Textarea
+                name="meta_description"
+                register={register}
+                label="Meta Description"
+                type="textarea"
+                placeholder="Brief SEO description for search engines (recommended 150-160 characters)"
+                row={3}
+                required={false}
+                error={errors?.meta_description}
+              />
 
               <Textarea
                 name="keywords"

@@ -4,7 +4,6 @@ const GlobalFilter = ({ search, setSearch, setPaginationPage }) => {
   // const [value, setValue] = useState(filter);
   const onChange = (e) => {
     // setValue(e.target.value);
-    setPaginationPage(1);
     setSearch(e.target.value || "");
   };
   return (

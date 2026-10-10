@@ -6,23 +6,48 @@ import {
   useGetAssetsByPaginationQuery,
   useUpdateAssetAccessTypeMutation,
 } from "@/store/api/app/Assets/assetsApiSlice";
-import { useState } from "react";
+import { useGetCategoriesQuery } from "@/store/api/app/Category/categoryApiSlice";
+import { exportToExcel, exportToCsv } from "@/utils/exportToExcel";
+import { stripHtml } from "@/utils/stripHtml";
+import { useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 const Assets = () => {
-  const [paginationPage, setPaginationPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [order, setOrder] = useState("desc");
-  const [search, setSearch] = useState("");
+  const [params, setParams] = useSearchParams();
+  const page = Number(params.get("page")) || 1;
+  const limit = Number(params.get("limit")) || 10;
+  const search = params.get("search") || "";
+
+  const update = (patch, options) =>
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      Object.entries(patch).forEach(([k, v]) => next.set(k, String(v)));
+      return next;
+    }, options);
+
+  const setPage = (p) => update({ page: p });
+  const setLimit = (l) => update({ limit: l, page: 1 }, { replace: true });
+  const setSearch = (s) => update({ search: s, page: 1 }, { replace: true });
+
   const noImage = useNoImage();
+
+  const { data: allCategoriesData } = useGetCategoriesQuery();
+
+  const categoryMap = useMemo(() => {
+    const map = new Map();
+    (allCategoriesData?.data || []).forEach((cat) => {
+      map.set(cat.id, cat.name);
+    });
+    return map;
+  }, [allCategoriesData]);
 
   const [updateAssetAccessType] = useUpdateAssetAccessTypeMutation();
 
   const { data, isLoading } = useGetAssetsByPaginationQuery(
     {
-      page: paginationPage,
+      page: page,
       limit: limit,
-      order: order,
       search: search,
     },
     { refetchOnMountOrArgChange: true },
@@ -173,22 +198,78 @@ const Assets = () => {
     },
   ];
 
+  const handleExport = (format = "xlsx") => {
+    try {
+      const assets = data?.data?.result || [];
+      if (!assets.length) {
+        toast.info("No assets to export");
+        return;
+      }
+
+      const exportRows = assets.map((asset) => {
+        const categoryName =
+          categoryMap.get(asset.sub_category?.category_id) || "";
+        const subCategoryName = asset.sub_category?.name || "";
+        const fileName = asset.file?.main_file
+          ? String(asset.file.main_file).split("/").pop()
+          : "";
+
+        let formattedDate = "";
+        if (asset.created_at) {
+          const d = new Date(asset.created_at);
+          if (!isNaN(d.getTime())) {
+            formattedDate = d.toISOString().slice(0, 10);
+          }
+        }
+
+        return {
+          "Asset ID": asset.id,
+          "Name": asset.name || "",
+          "Category": categoryName,
+          "Sub-Category": subCategoryName,
+          "Access Type": asset.access_type || "free",
+          "Resolution": asset.resolution || "",
+          "Size": asset.size || "",
+          "Attached 3D File": fileName || "No 3D File",
+          "Download Link": asset.download_link || "",
+          "Description": stripHtml(asset.short_description),
+          "Meta Title": stripHtml(asset.meta_title),
+          "Meta Description": stripHtml(asset.meta_description),
+          "Keywords": asset.keywords || "",
+          "Created At": formattedDate,
+        };
+      });
+
+      const fileName = `Assets_${new Date().toISOString().slice(0, 10)}`;
+      if (format === "csv") {
+        exportToCsv(exportRows, fileName);
+      } else {
+        exportToExcel(exportRows, fileName);
+      }
+    } catch (err) {
+      console.error("Export error:", err);
+      toast.error(
+        "Failed to export assets: " + (err?.message || "Unknown error"),
+      );
+    }
+  };
+
   return (
     <>
       <CustomPaginationTable
         title="Assets"
         COLUMNS={COLUMNS}
         data={data?.data}
-        paginationPage={paginationPage}
-        setPaginationPage={setPaginationPage}
+        paginationPage={page}
+        setPaginationPage={setPage}
         limit={limit}
         setLimit={setLimit}
-        order={order}
-        setOrder={setOrder}
         search={search}
         setSearch={setSearch}
         defaultStatus={false}
         isView={false}
+        isExcelExport={true}
+        handleExport={handleExport}
       />
     </>
   );

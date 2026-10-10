@@ -5,21 +5,35 @@ import CustomPaginationTable from '@/components/shared/CustomTable/CustomPaginat
 import SkeletionTable from '@/components/skeleton/Table';
 import envConfig from '@/configs/envConfig';
 import useNoImage from '@/hooks/useNoImage';
-import { useGetCategoriesByPaginationQuery,  } from '@/store/api/app/Category/categoryApiSlice';
-import { useState } from 'react';
+import { useGetCategoriesByPaginationQuery } from '@/store/api/app/Category/categoryApiSlice';
+import { exportToExcel, exportToCsv } from '@/utils/exportToExcel';
+import { stripHtml } from '@/utils/stripHtml';
+import { toast } from 'react-toastify';
+import { useSearchParams } from 'react-router-dom';
 
 const Category = () => {
-	const [paginationPage, setPaginationPage] = useState(1);
-	const [limit, setLimit] = useState(10);
-	const [order, setOrder] = useState('desc');
-	const [search, setSearch] = useState('');
-	const noImage = useNoImage()
+	const [params, setParams] = useSearchParams();
+	const page = Number(params.get('page')) || 1;
+	const limit = Number(params.get('limit')) || 10;
+	const search = params.get('search') || '';
+
+	const update = (patch, options) =>
+		setParams((prev) => {
+			const next = new URLSearchParams(prev);
+			Object.entries(patch).forEach(([k, v]) => next.set(k, String(v)));
+			return next;
+		}, options);
+
+	const setPage = (p) => update({ page: p });
+	const setLimit = (l) => update({ limit: l, page: 1 }, { replace: true });
+	const setSearch = (s) => update({ search: s, page: 1 }, { replace: true });
+
+	const noImage = useNoImage();
 
 	const { data, isLoading, isError, error, isFetching } =
-	useGetCategoriesByPaginationQuery({
-			page: paginationPage,
+		useGetCategoriesByPaginationQuery({
+			page: page,
 			limit: limit,
-			order: order,
 			search: search,
 		});
 
@@ -56,22 +70,66 @@ const Category = () => {
 		},
 	];
 
+	const handleExport = (format = 'xlsx') => {
+		try {
+			const categories = data?.data?.result || [];
+			if (!categories.length) {
+				toast.info('No categories to export');
+				return;
+			}
+
+			const exportRows = categories.map((cat) => {
+				const subCats = Array.isArray(cat.sub_categories) ? cat.sub_categories : [];
+				const subCatNames = subCats.map((s) => s.name).join(', ');
+
+				let formattedDate = '';
+				if (cat.created_at) {
+					const d = new Date(cat.created_at);
+					if (!isNaN(d.getTime())) {
+						formattedDate = d.toISOString().slice(0, 10);
+					}
+				}
+
+				return {
+					'Category ID': cat.id,
+					'Name': cat.name || '',
+					'Description': stripHtml(cat.short_description),
+					'Meta Title': stripHtml(cat.meta_title),
+					'Meta Description': stripHtml(cat.meta_description),
+					'Keywords': cat.keywords || '',
+					'Total Sub-Categories': subCats.length,
+					'Sub-Categories List': subCatNames || 'None',
+					'Created At': formattedDate,
+				};
+			});
+
+			const fileName = `Categories_${new Date().toISOString().slice(0, 10)}`;
+			if (format === 'csv') {
+				exportToCsv(exportRows, fileName);
+			} else {
+				exportToExcel(exportRows, fileName);
+			}
+		} catch (err) {
+			console.error('Export error:', err);
+			toast.error('Failed to export categories: ' + (err?.message || 'Unknown error'));
+		}
+	};
+
 	return (
 		<>
 			<CustomPaginationTable
 				title="Categories"
 				COLUMNS={COLUMNS}
 				data={data?.data}
-				paginationPage={paginationPage}
-				setPaginationPage={setPaginationPage}
+				paginationPage={page}
+				setPaginationPage={setPage}
 				limit={limit}
 				setLimit={setLimit}
-				order={order}
-				setOrder={setOrder}
 				search={search}
 				setSearch={setSearch}
 				defaultStatus={false}
-				
+				isExcelExport={true}
+				handleExport={handleExport}
 			/>
 		</>
 	);

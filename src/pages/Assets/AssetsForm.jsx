@@ -15,6 +15,7 @@ import AssetsChunkedUploader from "@/utils/AssetsChunkedUploader";
 import UploadQueue from "@/utils/UploadQueue";
 import { apiSlice } from "@/store/api/apiSlice";
 import { extractFile, resolveImageUrl } from "@/utils/fileAndImageHelpers";
+import { stripHtml } from "@/utils/stripHtml";
 
 import { useEffect, useRef, useState } from "react";
 import { Controller, useFieldArray } from "react-hook-form";
@@ -241,8 +242,8 @@ const AssetsForm = ({ id, data, refetch }) => {
                 tempId: null,
               }))
             : defaultBlankForm.images,
-        meta_title: data?.meta_title || "",
-        meta_description: data?.meta_description || "",
+        meta_title: stripHtml(data?.meta_title || ""),
+        meta_description: stripHtml(data?.meta_description || ""),
         keywords: data?.keywords || "",
       }
     : defaultBlankForm;
@@ -504,7 +505,11 @@ const AssetsForm = ({ id, data, refetch }) => {
         // Handled below with tempId and alt association
       } else {
         if (data[key] !== undefined && data[key] !== null) {
-          formData.append(key, data[key]);
+          const val =
+            key === "meta_description" || key === "meta_title"
+              ? stripHtml(data[key])
+              : data[key];
+          formData.append(key, val);
         }
       }
     });
@@ -698,8 +703,8 @@ const AssetsForm = ({ id, data, refetch }) => {
                 },
               ],
 
-        meta_title: data?.meta_title || "",
-        meta_description: data?.meta_description || "",
+        meta_title: stripHtml(data?.meta_title || ""),
+        meta_description: stripHtml(data?.meta_description || ""),
         keywords: data?.keywords || "",
       });
       isInitializedRef.current = true;
@@ -1181,17 +1186,16 @@ const AssetsForm = ({ id, data, refetch }) => {
                 required={false}
                 error={errors?.meta_title}
               />
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Meta Description
-                </label>
-                <TextEditor
-                  name="meta_description"
-                  errors={errors}
-                  control={control}
-                  required={false}
-                />
-              </div>
+              <Textarea
+                name="meta_description"
+                register={register}
+                label="Meta Description"
+                type="textarea"
+                placeholder="Brief SEO description for search engines (recommended 150-160 characters)"
+                row={3}
+                required={false}
+                error={errors?.meta_description}
+              />
               <Textarea
                 name="keywords"
                 register={register}
