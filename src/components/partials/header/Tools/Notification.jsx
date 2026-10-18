@@ -3,7 +3,38 @@ import Dropdown from "@/components/ui/Dropdown";
 import Icon from "@/components/ui/Icon";
 import { Link } from "react-router-dom";
 import { Menu } from "@headlessui/react";
-import { notifications } from "@/constant/data";
+import User1 from "@/assets/images/all-img/user.png";
+import User2 from "@/assets/images/all-img/user2.png";
+import User3 from "@/assets/images/all-img/user3.png";
+import User4 from "@/assets/images/all-img/user4.png";
+
+const notifications = [
+  {
+    title: "Your order is placed",
+    desc: "Amet minim mollit non deser unt ullamco est sit aliqua.",
+    image: User1,
+    link: "#",
+  },
+  {
+    title: "Congratulations Darlene  🎉",
+    desc: "Won the monthly best seller badge",
+    unread: true,
+    image: User2,
+    link: "#",
+  },
+  {
+    title: "Revised Order 👋",
+    desc: "Won the monthly best seller badge",
+    image: User3,
+    link: "#",
+  },
+  {
+    title: "Brooklyn Simmons",
+    desc: "Added you to Top Secret Project group...",
+    image: User4,
+    link: "#",
+  },
+];
 const notifyLabel = () => {
   return (
     <span className="relative lg:h-[32px] lg:w-[32px] lg:bg-slate-100 text-slate-900 lg:dark:bg-slate-900 dark:text-white cursor-pointer rounded-full text-[20px] flex flex-col items-center justify-center">

@@ -31,5 +31,12 @@ export default defineConfig(({ mode }) => {
     },
 
     plugins: [react()],
+    css: {
+      preprocessorOptions: {
+        scss: {
+          silenceDeprecations: ["import", "legacy-js-api"],
+        },
+      },
+    },
   };
 });
