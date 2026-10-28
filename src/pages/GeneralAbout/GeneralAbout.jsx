@@ -37,17 +37,16 @@ const GeneralAbout = ({ id }) => {
   } = useSubmit(
     id,
     id ? useCreateGeneralAboutUsMutation : useCreateGeneralAboutUsMutation,
-    false,
   );
 
-  const handleFormSubmit = async (data) => {
+  const handleFormSubmit = async (formDataValues) => {
     const formData = new FormData();
 
-    const keys = Object.keys(data);
+    const keys = Object.keys(formDataValues);
 
     keys.forEach((key) => {
       if (["cover"].includes(key)) {
-        const fileValue = data[key];
+        const fileValue = formDataValues[key];
         const hasNewFile =
           fileValue instanceof File ||
           fileValue instanceof Blob ||
@@ -57,22 +56,29 @@ const GeneralAbout = ({ id }) => {
           formData.append(key, fileValue[0] || fileValue);
         } else if (typeof fileValue === "string" && fileValue.trim() !== "") {
           formData.append(key, fileValue);
+        } else if (data?.cover) {
+          formData.append(key, data.cover);
         }
       } else {
-        if (data[key] !== undefined && data[key] !== null) {
-          formData.append(key, data[key]);
+        if (formDataValues[key] !== undefined && formDataValues[key] !== null) {
+          formData.append(key, formDataValues[key]);
         }
       }
     });
+
+    if (!formData.has("cover") && data?.cover) {
+      formData.append("cover", data.cover);
+    }
 
     await onSubmit(formData);
   };
 
   useEffect(() => {
     reset({
-      title: data?.title,
-      short_description: data?.short_description,
-      content: data?.content,
+      title: data?.title || "",
+      short_description: data?.short_description || "",
+      content: data?.content || "",
+      cover: data?.cover || "",
     });
   }, [data]);
 
@@ -114,7 +120,7 @@ const GeneralAbout = ({ id }) => {
           <Fileinput
             selectedFile={watch("cover")?.[0]}
             name={"cover"}
-            defaultUrl={data?.image}
+            defaultUrl={data?.cover}
             preview={true}
             control={control}
           />
