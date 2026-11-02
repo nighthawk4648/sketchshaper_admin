@@ -61,6 +61,7 @@ const BlogsForm = ({ id, data }) => {
 
   useEffect(() => {
     reset({
+      slug: data?.slug || "",
       name: data?.name,
       title: data?.title,
       short_description: data?.short_description,
@@ -112,6 +113,15 @@ const BlogsForm = ({ id, data }) => {
         <div className="xl:col-span-7 space-y-6">
           <Card title="Article Content">
             <div className="space-y-4">
+              <Textinput
+                register={register}
+                label="URL Slug"
+                type="text"
+                placeholder="e.g. 10-essential-sketchup-tips (optional - auto-generated from title if left empty)"
+                name="slug"
+                error={errors?.slug}
+              />
+
               <Textinput
                 register={register}
                 label="Article Title"

@@ -68,6 +68,7 @@ const SubCategoryForm = ({ id, data }) => {
 
   useEffect(() => {
     reset({
+      slug: data?.slug || "",
       name: data?.name,
       short_description: data?.short_description,
       category_id: data?.category_id,
@@ -115,6 +116,15 @@ const SubCategoryForm = ({ id, data }) => {
         <div className="xl:col-span-7 space-y-6">
           <Card title="General Information">
             <div className="space-y-4">
+              <Textinput
+                register={register}
+                label="URL Slug"
+                type="text"
+                placeholder="e.g. sofas, table-lamps, armchairs (optional - auto-generated from name if left empty)"
+                name="slug"
+                error={errors?.slug}
+              />
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Textinput
                   register={register}

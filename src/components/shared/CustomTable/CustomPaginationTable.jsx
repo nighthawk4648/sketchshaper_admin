@@ -80,6 +80,7 @@ const CustomPaginationTable = ({
   isPrint = false,
   isExcelExport = false,
   handleExport,
+  leftContent,
 }) => {
   const navigate = useNavigate();
   const { handleDelete } = useDelete();
@@ -291,12 +292,13 @@ const CustomPaginationTable = ({
   return (
     <>
       <Card>
-        <div className="md:flex justify-between items-center mb-6">
-          <div className="md:flex md:w-[60%] gap-10 items-center">
-            <h4 className="card-title">{title}</h4>
+        <div className="md:flex justify-between items-center mb-6 gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <h4 className="card-title mb-0">{title}</h4>
+            {leftContent}
           </div>
 
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center justify-end gap-3">
             {/* <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} /> */}
 
             {isSearch && (

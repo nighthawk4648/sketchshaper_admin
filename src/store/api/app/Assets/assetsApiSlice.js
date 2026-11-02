@@ -14,10 +14,18 @@ export const assetsApiSlice = apiSlice.injectEndpoints({
         order = "desc",
         search = "",
         access_type = "",
+        sub_category_id = "",
+        sort_by = "",
       }) => {
         let url = `assets/pages?page=${page}&limit=${limit}&order=${order}&search=${search}`;
         if (access_type && access_type !== "all") {
           url += `&access_type=${access_type}`;
+        }
+        if (sub_category_id && sub_category_id !== "all") {
+          url += `&sub_category_id=${sub_category_id}`;
+        }
+        if (sort_by) {
+          url += `&sort_by=${sort_by}`;
         }
         return url;
       },

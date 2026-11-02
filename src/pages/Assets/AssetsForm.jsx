@@ -16,6 +16,7 @@ import UploadQueue from "@/utils/UploadQueue";
 import { apiSlice } from "@/store/api/apiSlice";
 import { extractFile, resolveImageUrl } from "@/utils/fileAndImageHelpers";
 import { stripHtml } from "@/utils/stripHtml";
+import slugify from "@/utils/slugify";
 
 import { useEffect, useRef, useState } from "react";
 import { Controller, useFieldArray } from "react-hook-form";
@@ -203,6 +204,7 @@ const AssetsForm = ({ id, data, refetch }) => {
   console.log("will be update", data);
 
   const defaultBlankForm = {
+    slug: "",
     name: "",
     resolution: "",
     short_description: "",
@@ -227,6 +229,7 @@ const AssetsForm = ({ id, data, refetch }) => {
 
   const initialFormValues = data
     ? {
+        slug: data?.slug || slugify(data?.name || ""),
         name: data?.name || "",
         resolution: data?.resolution || "",
         short_description: data?.short_description || "",
@@ -258,6 +261,7 @@ const AssetsForm = ({ id, data, refetch }) => {
     onSubmit,
     watch,
     setValue,
+    setError,
     isLoading,
   } = useSubmit(
     activeId,
@@ -471,6 +475,16 @@ const AssetsForm = ({ id, data, refetch }) => {
   const handleFormSubmit = async (data) => {
     console.log("data", data);
 
+    // Validate Slug format (cannot be purely digits)
+    const slugVal = data.slug ? String(data.slug).trim() : "";
+    if (slugVal && /^\d+$/.test(slugVal)) {
+      setError("slug", {
+        type: "manual",
+        message: "URL slug cannot be purely numbers. Please include letters or words.",
+      });
+      return;
+    }
+
     // Validate Cover Image on Create
     const coverValue = data.cover;
     const hasCover =
@@ -577,6 +591,9 @@ const AssetsForm = ({ id, data, refetch }) => {
 
     // Step 1: Create / Update asset record
     const createdAsset = await onSubmit(formData);
+    if (!createdAsset) {
+      return;
+    }
 
     // If an asset was newly created in this session, immediately transition the form
     // into edit mode with activeId so any retry (if 3D upload fails) updates this asset rather than duplicating it!
@@ -676,6 +693,7 @@ const AssetsForm = ({ id, data, refetch }) => {
   useEffect(() => {
     if (data && (!isInitializedRef.current || lastLoadedIdRef.current !== id)) {
       reset({
+        slug: data?.slug || slugify(data?.name || ""),
         name: data?.name || "",
         resolution: data?.resolution || "",
         short_description: data?.short_description || "",
@@ -799,6 +817,15 @@ const AssetsForm = ({ id, data, refetch }) => {
           {/* Card 1: General Information */}
           <Card title="General Information">
             <div className="space-y-4">
+              <Textinput
+                register={register}
+                label="URL Slug"
+                type="text"
+                placeholder="e.g. modern-scandinavian-armchair (optional - auto-generated from name if left empty)"
+                name="slug"
+                error={errors?.slug}
+              />
+
               <Textinput
                 register={register}
                 label="Asset Name"

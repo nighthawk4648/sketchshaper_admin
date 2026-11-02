@@ -14,6 +14,7 @@ const useSubmit = (id, hook, redirect, formOptions = {}) => {
     handleSubmit,
     watch,
     setValue,
+    setError,
   } = useForm(formOptions);
 
   const isDualHook =
@@ -46,13 +47,24 @@ const useSubmit = (id, hook, redirect, formOptions = {}) => {
           response.error?.data?.message ||
           response.error?.message ||
           "Error occurred from server!";
+        if (
+          response.error?.status === 409 ||
+          response.error?.code === 409 ||
+          errorMsg.toLowerCase().includes("slug")
+        ) {
+          setError("slug", { type: "manual", message: errorMsg });
+        }
         throw new Error(errorMsg);
       }
 
       const { data } = response;
 
       if (data?.status !== "success") {
-        throw new Error(data?.message || "Error occurred from server!");
+        const errorMsg = data?.message || "Error occurred from server!";
+        if (errorMsg.toLowerCase().includes("slug")) {
+          setError("slug", { type: "manual", message: errorMsg });
+        }
+        throw new Error(errorMsg);
       }
       if (redirect !== false) {
         reset();
@@ -62,6 +74,9 @@ const useSubmit = (id, hook, redirect, formOptions = {}) => {
       return data?.data; // return created/updated entity so callers can chain actions
     } catch (error) {
       console.log(error);
+      if (error?.message && error.message.toLowerCase().includes("slug")) {
+        setError("slug", { type: "manual", message: error.message });
+      }
       toast.error(error.message || "Something went wrong!");
       return null; // explicit null on failure
     }
@@ -76,6 +91,7 @@ const useSubmit = (id, hook, redirect, formOptions = {}) => {
     handleSubmit,
     watch,
     setValue,
+    setError,
     onSubmit,
     isLoading,
   };

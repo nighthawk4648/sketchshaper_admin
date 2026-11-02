@@ -63,6 +63,7 @@ const FooterPageForm = ({ id, data }) => {
 
   useEffect(() => {
     reset({
+      slug: data?.slug || "",
       title: data?.title,
       short_description: data?.short_description,
       content: data?.content,
@@ -111,6 +112,16 @@ const FooterPageForm = ({ id, data }) => {
         <div className="xl:col-span-7 space-y-6">
           <Card title="Page Content">
             <div className="space-y-4">
+              <Textinput
+                register={register}
+                label="URL Slug"
+                type="text"
+                placeholder="e.g. faq, refund-policy, creator-guide"
+                name="slug"
+                required={true}
+                error={errors?.slug}
+              />
+
               <Textinput
                 register={register}
                 label="Page Title"

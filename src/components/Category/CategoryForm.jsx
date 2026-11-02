@@ -63,6 +63,7 @@ const CategoryForm = ({ id, data }) => {
 
   useEffect(() => {
     reset({
+      slug: data?.slug || "",
       name: data?.name,
       short_description: data?.short_description,
       meta_title: stripHtml(data?.meta_title || ""),
@@ -107,6 +108,15 @@ const CategoryForm = ({ id, data }) => {
         <div className="xl:col-span-7 space-y-6">
           <Card title="General Information">
             <div className="space-y-4">
+              <Textinput
+                register={register}
+                label="URL Slug"
+                type="text"
+                placeholder="e.g. architecture, furniture, landscaping (optional - auto-generated from name if left empty)"
+                name="slug"
+                error={errors?.slug}
+              />
+
               <Textinput
                 register={register}
                 label="Category Name"
