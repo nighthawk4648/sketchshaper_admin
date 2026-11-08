@@ -5,7 +5,7 @@ const {
   VITE_PROD_API_URL,
   VITE_LOCAL_IMG_URL,
   VITE_PROD_IMG_URL,
-} = import.meta.env;
+} = import.meta.env || {};
 
 // Normalize URLs to avoid trailing slashes causing double-slash issues (e.g. /api//assets)
 const normalizeApiUrl = (url) => {
@@ -26,13 +26,13 @@ const defaultProdImg = "https://api.sketchshaper.com/api/uploads/";
 
 const rawApiUrl =
   VITE_API_URL ||
-  (import.meta.env.DEV
+  (import.meta.env?.DEV
     ? VITE_LOCAL_API_URL || defaultDevApi
     : VITE_PROD_API_URL || defaultProdApi);
 
 const rawImgUrl =
   VITE_IMG_URL ||
-  (import.meta.env.DEV
+  (import.meta.env?.DEV
     ? VITE_LOCAL_IMG_URL || defaultDevImg
     : VITE_PROD_IMG_URL || defaultProdImg);
 

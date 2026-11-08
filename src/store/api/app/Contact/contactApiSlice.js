@@ -3,9 +3,14 @@ import { apiSlice } from "@/store/api/apiSlice";
 export const contactApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getContactMessages: builder.query({
-      query: ({ page = 1, limit = 20, status = "" }) => ({
+      query: ({ page = 1, limit = 20, status = "", service_type = "" }) => ({
         url: "contact",
-        params: { page, limit, ...(status ? { status } : {}) },
+        params: {
+          page,
+          limit,
+          ...(status ? { status } : {}),
+          ...(service_type ? { service_type } : {}),
+        },
       }),
       providesTags: ["contactMessages"],
     }),
