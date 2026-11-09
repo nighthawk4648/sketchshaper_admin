@@ -1,3 +1,4 @@
+import LinkedAssetSelector from "@/components/shared/AssetSelector/LinkedAssetSelector";
 import TextEditor from "@/components/shared/Select/TextEditor";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -10,7 +11,7 @@ import {
   useUpdateBlogsMutation,
 } from "@/store/api/app/Blogs/BlogsApiSlice";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
@@ -30,6 +31,9 @@ const BlogsForm = ({ id, data }) => {
     setValue,
     isLoading,
   } = useSubmit(id, id ? useUpdateBlogsMutation : useCreateBlogsMutation);
+
+  const [featuredAssets, setFeaturedAssets] = useState([]); // linked models/textures (internal linking)
+  const featuredAssetsLoadedRef = useRef(false); // edit mode: true once saved links were loaded into state
 
   const handleFormSubmit = async (data) => {
     const formData = new FormData();
@@ -56,6 +60,15 @@ const BlogsForm = ({ id, data }) => {
       }
     });
 
+    // Internal linking: in edit mode only send the list once the saved links were
+    // loaded, so a fast save can never clear them by sending an empty list.
+    if (!id || featuredAssetsLoadedRef.current) {
+      formData.append(
+        "featured_asset_ids",
+        JSON.stringify(featuredAssets.map((a) => a.id)),
+      );
+    }
+
     await onSubmit(formData);
   };
 
@@ -75,6 +88,10 @@ const BlogsForm = ({ id, data }) => {
       meta_description: data?.meta_description || "",
       keywords: data?.keywords || "",
     });
+    if (data) {
+      setFeaturedAssets(data.featured_assets || []);
+      featuredAssetsLoadedRef.current = true;
+    }
   }, [data, reset]);
 
   return (
@@ -327,6 +344,17 @@ const BlogsForm = ({ id, data }) => {
                 error={errors?.keywords}
               />
             </div>
+          </Card>
+
+          {/* Card 4: Internal Linking - models & textures featured in this article */}
+          <Card title="Featured 3D Models (Internal Linking)">
+            <p className="text-xs text-slate-500 mb-3">
+              Attach 3D models or textures discussed in this article.
+            </p>
+            <LinkedAssetSelector
+              selectedAssets={featuredAssets}
+              onChange={setFeaturedAssets}
+            />
           </Card>
         </div>
       </div>

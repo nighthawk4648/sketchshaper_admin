@@ -32,6 +32,16 @@ export const assetsApiSlice = apiSlice.injectEndpoints({
       providesTags: ["assets"],
     }),
 
+    // Lightweight search for the linked-assets picker
+    searchAssetsLite: builder.query({
+      query: ({ search = "", excludeId } = {}) => {
+        let url = `assets/search-lite?search=${encodeURIComponent(search)}`;
+        if (excludeId) url += `&excludeId=${excludeId}`;
+        return url;
+      },
+      providesTags: ["assets"],
+    }),
+
     getAssetsById: builder.query({
       query: (id) => `assets/${id}`,
       providesTags: ["assets"],
@@ -89,6 +99,7 @@ export const {
   useGetAssetsByPaginationQuery,
   useGetAssetsQuery,
   useGetAssetsByIdQuery,
+  useSearchAssetsLiteQuery,
   useUpdateAssetsMutation,
   useUpdateAssetAccessTypeMutation,
   useBulkUpdateAssetAccessTypeMutation,

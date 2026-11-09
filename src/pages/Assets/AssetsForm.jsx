@@ -1,3 +1,4 @@
+import LinkedAssetSelector from "@/components/shared/AssetSelector/LinkedAssetSelector";
 import SelectSubCategory from "@/components/shared/Select/SelectSubCategory";
 import TextEditor from "@/components/shared/Select/TextEditor";
 import Button from "@/components/ui/Button";
@@ -191,6 +192,8 @@ const AssetsForm = ({ id, data, refetch }) => {
   const [isUploading, setIsUploading] = useState(false); // locks button during chunked upload
   const [removedImageIds, setRemovedImageIds] = useState([]); // DB AssetImage ids staged for deletion on save
   const [deleteExistingFile, setDeleteExistingFile] = useState(false); // flag to delete current 3D file on save
+  const [usedAssets, setUsedAssets] = useState([]); // linked textures/materials (internal linking)
+  const usedAssetsLoadedRef = useRef(false); // edit mode: true once saved links were loaded into state
 
   // Clear any pending redirect timers on unmount to avoid memory leaks
   useEffect(() => {
@@ -589,6 +592,15 @@ const AssetsForm = ({ id, data, refetch }) => {
       formData.append("delete_file", "true");
     }
 
+    // Internal linking: in edit mode only send the list once the saved links were
+    // loaded, so a fast save can never clear them by sending an empty list.
+    if (!id || usedAssetsLoadedRef.current) {
+      formData.append(
+        "used_asset_ids",
+        JSON.stringify(usedAssets.map((a) => a.id)),
+      );
+    }
+
     // Step 1: Create / Update asset record
     const createdAsset = await onSubmit(formData);
     if (!createdAsset) {
@@ -725,6 +737,8 @@ const AssetsForm = ({ id, data, refetch }) => {
         meta_description: stripHtml(data?.meta_description || ""),
         keywords: data?.keywords || "",
       });
+      setUsedAssets(data?.used_assets || []);
+      usedAssetsLoadedRef.current = true;
       isInitializedRef.current = true;
       lastLoadedIdRef.current = id;
     }
@@ -1234,6 +1248,18 @@ const AssetsForm = ({ id, data, refetch }) => {
                 error={errors?.keywords}
               />
             </div>
+          </Card>
+
+          {/* Card 5: Internal Linking - textures & materials used in this model */}
+          <Card title="Used Textures & Materials (Internal Linking)">
+            <p className="text-xs text-slate-500 mb-3">
+              Attach textures or materials used to construct this model.
+            </p>
+            <LinkedAssetSelector
+              excludeAssetId={id || activeId}
+              selectedAssets={usedAssets}
+              onChange={setUsedAssets}
+            />
           </Card>
         </div>
       </div>
