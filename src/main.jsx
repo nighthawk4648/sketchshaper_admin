@@ -1,4 +1,3 @@
-import 'flatpickr/dist/themes/light.css';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
 import 'react-toastify/dist/ReactToastify.css';

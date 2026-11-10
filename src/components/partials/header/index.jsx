@@ -9,7 +9,6 @@ import useWidth from "@/hooks/useWidth";
 import HorizentalMenu from "./Tools/HorizentalMenu";
 import Logo from "./Tools/Logo";
 import MonoChrome from "./Tools/MonoChrome";
-import Notification from "./Tools/Notification";
 import Profile from "./Tools/Profile";
 import SearchModal from "./Tools/SearchModal";
 import SwitchDark from "./Tools/SwitchDark";
@@ -116,8 +115,6 @@ const Header = ({ className = "custom-class" }) => {
             {/* <Language /> */}
             <SwitchDark />
             <MonoChrome />
-            {/* {width >= breakpoints.md && <Message />} */}
-            {/* {width >= breakpoints.md && <Notification />} */}
             {width >= breakpoints.md && <Profile />}
             {width <= breakpoints.md && (
               <div
