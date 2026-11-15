@@ -16,7 +16,14 @@ export const authApi = apiSlice.injectEndpoints({
 				body: data,
 			}),
 		}),
+		// Ends the session on the server and clears its cookie
+		logout: builder.mutation({
+			query: () => ({
+				url: 'admins/logout',
+				method: 'POST',
+			}),
+		}),
 	}),
 });
 
-export const { useLoginMutation } = authApi;
+export const { useLoginMutation, useLogoutMutation } = authApi;

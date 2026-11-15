@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import UserAvatar from "@/assets/images/all-img/user.png";
 import envConfig from "@/configs/envConfig";
 import { logOut } from "@/store/api/auth/authSlice";
+import { useLogoutMutation } from "@/store/api/auth/authApiSlice";
 import { useSelector } from "react-redux";
 
 const profileLabel = (auth) => {
@@ -39,9 +40,11 @@ const Profile = () => {
   const { isAuth, auth } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [logoutRequest] = useLogoutMutation();
 
-  const handleLogout = () => {
-    // Clear user data from local storage & cookies
+  const handleLogout = async () => {
+    // End the session on the server, then forget the admin locally even if that request failed
+    await logoutRequest();
     dispatch(logOut());
     navigate("/login");
   };

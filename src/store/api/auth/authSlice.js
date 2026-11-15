@@ -1,13 +1,11 @@
 import { isJson } from "@/utils/isJson";
 import { createSlice } from "@reduxjs/toolkit";
-import Cookies from "js-cookie";
 
 const user =
   typeof window !== "undefined" ? localStorage.getItem("user") : null;
 const parsed = isJson(user) ? JSON.parse(user) : null;
 // Support both flat user payload and legacy { auth: payload } wrapper
 const storedUser = parsed?.auth ? parsed.auth : parsed;
-const token = Cookies.get("token") || storedUser?.token || "";
 
 const initialStateSchema = {
   auth: {
@@ -17,7 +15,6 @@ const initialStateSchema = {
       id: "",
       name: "",
     },
-    token: "",
   },
   isAuth: false,
 };
@@ -25,32 +22,24 @@ const initialStateSchema = {
 export const authSlice = createSlice({
   name: "auth",
   initialState:
-    token && storedUser
-      ? {
-          auth: {
-            ...storedUser,
-            token: token || storedUser.token || "",
-          },
-          isAuth: true,
-        }
+    // Only a hint for the first render; the first 401 from the API signs the admin out
+    storedUser?.email
+      ? { auth: { id: storedUser.id, email: storedUser.email }, isAuth: true }
       : initialStateSchema,
   reducers: {
     setUser: (state, action) => {
       const payload = action.payload || {};
-      if (payload.token) {
-        Cookies.set("token", payload.token, {
-          expires: 1,
-        });
-      }
-
-      localStorage.setItem("user", JSON.stringify(payload));
+      // Not secret: the session itself is the HttpOnly cookie set by the API
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ id: payload.id, email: payload.email }),
+      );
 
       state.auth = payload;
       state.isAuth = true;
     },
 
     logOut: (state) => {
-      Cookies.remove("token");
       localStorage.removeItem("user");
 
       state.auth = initialStateSchema.auth;

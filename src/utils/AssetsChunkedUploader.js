@@ -1,5 +1,4 @@
 import axios from "axios";
-import Cookies from "js-cookie";
 
 class AssetsChunkedUploader {
   constructor(file, onProgress, apiBaseUrl = "", assetId = null) {
@@ -18,12 +17,7 @@ class AssetsChunkedUploader {
   }
 
   getHeaders(extraHeaders = {}) {
-    const token = Cookies.get("token");
-    const headers = { ...extraHeaders };
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-    return headers;
+    return { ...extraHeaders };
   }
 
   async initialize() {
@@ -44,6 +38,7 @@ class AssetsChunkedUploader {
           originalFilename: this.file.name,
         },
         {
+          withCredentials: true,
           headers: this.getHeaders(),
         },
       );
@@ -99,6 +94,7 @@ class AssetsChunkedUploader {
         `${this.apiBaseUrl}/assets/upload-chunk`,
         formData,
         {
+          withCredentials: true,
           headers: this.getHeaders({ "Content-Type": "multipart/form-data" }),
           signal: this.activeChunkAbortController.signal,
         },
@@ -180,6 +176,7 @@ class AssetsChunkedUploader {
           originalFilename: this.file.name,
         },
         {
+          withCredentials: true,
           headers: this.getHeaders(),
         },
       );
@@ -197,6 +194,7 @@ class AssetsChunkedUploader {
       const response = await axios.get(
         `${this.apiBaseUrl}/assets/status/${this.uploadSessionId}`,
         {
+          withCredentials: true,
           headers: this.getHeaders(),
         },
       );
@@ -231,6 +229,7 @@ class AssetsChunkedUploader {
       await axios.delete(
         `${this.apiBaseUrl}/assets/cancel/${this.uploadSessionId}`,
         {
+          withCredentials: true,
           headers: this.getHeaders(),
         },
       );

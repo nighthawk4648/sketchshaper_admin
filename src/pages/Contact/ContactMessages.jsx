@@ -15,9 +15,7 @@ import {
   isSafeHttpUrl,
   buildReplyMailto,
   useAuthedBlobUrl,
-  getAuthToken,
 } from "@/utils/contact";
-import Cookies from "js-cookie";
 import envConfig from "@/configs/envConfig";
 import { useState, useMemo } from "react";
 import { toast } from "react-toastify";
@@ -136,12 +134,8 @@ const ContactMessages = () => {
     setIsDownloading(true);
 
     try {
-      const token = getAuthToken();
-      const headers = {};
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-
       const res = await fetch(`${envConfig.apiUrl}/contact/${msg.id}/attachment`, {
-        headers,
+        credentials: "include",
       });
 
       if (!res.ok) {

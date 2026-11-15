@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import Cookies from "js-cookie";
 import envConfig from "../configs/envConfig.js";
 
 export const SERVICE_TYPE_CONFIG = {
@@ -138,21 +137,6 @@ export const buildReplyMailto = ({
   return url;
 };
 
-export const getAuthToken = () => {
-  const cookieToken = Cookies.get("token");
-  if (cookieToken) return cookieToken;
-  try {
-    const raw = typeof window !== "undefined" ? localStorage.getItem("user") : null;
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      return parsed?.token || parsed?.auth?.token || "";
-    }
-  } catch (err) {
-    // Ignore parse error
-  }
-  return "";
-};
-
 /**
  * Custom hook to safely fetch private attachments with Bearer token authentication.
  * Prevents non-serializable Blobs from polluting the Redux store.
@@ -181,16 +165,10 @@ export const useAuthedBlobUrl = (messageId, enabled = true) => {
       setIsError(false);
 
       try {
-        const token = getAuthToken();
-        const headers = {};
-        if (token) {
-          headers["Authorization"] = `Bearer ${token}`;
-        }
-
         const res = await fetch(
           `${envConfig.apiUrl}/contact/${messageId}/attachment?inline=1`,
           {
-            headers,
+            credentials: "include",
             signal: abortController.signal,
           }
         );
