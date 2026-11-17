@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import AuthLayout from "@/layout/AuthLayout";
 import Layout from "@/layout/Layout";
 
@@ -66,10 +66,10 @@ const ApplicationSettings = lazy(
 
 // Patreon
 const PatreonDashboard = lazy(() => import("@/pages/Patreon/PatreonDashboard"));
-const PatreonUsers = lazy(() => import("@/pages/Patreon/PatreonUsers"));
-const PatreonUserDetail = lazy(
-  () => import("@/pages/Patreon/PatreonUserDetail"),
-);
+
+// Members (every website account, manual PRO / block)
+const Members = lazy(() => import("@/pages/Members/Members"));
+const MemberDetail = lazy(() => import("@/pages/Members/MemberDetail"));
 
 // Contact
 const ContactMessages = lazy(() => import("@/pages/Contact/ContactMessages"));
@@ -415,17 +415,23 @@ const router = createBrowserRouter([
                 element: <PatreonDashboard />,
               },
               {
-                path: "users",
-                children: [
-                  {
-                    path: "",
-                    element: <PatreonUsers />,
-                  },
-                  {
-                    path: ":id",
-                    element: <PatreonUserDetail />,
-                  },
-                ],
+                // The old subscriber list is now the Members page
+                path: "users/*",
+                element: <Navigate to="/admin/members" replace />,
+              },
+            ],
+          },
+
+          {
+            path: "members",
+            children: [
+              {
+                path: "",
+                element: <Members />,
+              },
+              {
+                path: ":id",
+                element: <MemberDetail />,
               },
             ],
           },

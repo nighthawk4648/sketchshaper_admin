@@ -137,17 +137,17 @@ const navMenu = (user_type, type) => [
   },
 
   {
-    title: "Patreon",
-    icon: "heroicons-outline:heart",
+    title: "Members",
+    icon: "heroicons-outline:user-group",
     child: [
       {
-        childtitle: "Dashboard",
-        childlink: "/admin/patreon",
+        childtitle: "Members",
+        childlink: "/admin/members",
       },
 
       {
-        childtitle: "Users",
-        childlink: "/admin/patreon/users",
+        childtitle: "Patreon Dashboard",
+        childlink: "/admin/patreon",
       },
     ],
   },

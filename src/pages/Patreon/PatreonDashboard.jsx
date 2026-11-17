@@ -1,328 +1,132 @@
+import { useNavigate } from "react-router-dom";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Icon from "@/components/ui/Icon";
-import { usePatreon } from "@/hooks/usePatreon";
-import { useNavigate } from "react-router-dom";
+import { useGetMemberStatsQuery } from "@/store/api/app/Members/membersApiSlice";
+import { formatMoney } from "@/utils/money";
 
+const TIER_COLORS = ["bg-[#FF424D]", "bg-purple-500", "bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-slate-400"];
+
+const Stat = ({ label, value, note, icon, tone }) => (
+  <Card noborder className={`shadow-md border ${tone}`}>
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</p>
+        <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-1">{value}</h3>
+        {note && <p className="text-[11px] text-slate-500 mt-1">{note}</p>}
+      </div>
+      <Icon icon={icon} className="text-3xl text-slate-400" />
+    </div>
+  </Card>
+);
+
+// Numbers counted on the server. Patreon figures come from each connected account's last check, not live from Patreon.
 const PatreonDashboard = () => {
   const navigate = useNavigate();
-  const { stats, isLoading, isError, error } = usePatreon({
-    initialPage: 1,
-    initialLimit: 1000,
-  });
+  const { data, isLoading, isError, error } = useGetMemberStatsQuery();
+  const stats = data?.data;
 
-  if (isError) {
+  if (isLoading) return <p className="py-24 text-center text-sm text-slate-500">Loading numbers...</p>;
+  if (isError || !stats) {
     return (
       <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-8 text-center max-w-xl mx-auto my-12">
-        <Icon
-          icon="heroicons:exclamation-triangle"
-          className="text-4xl text-red-500 mx-auto mb-3"
-        />
-        <h3 className="text-lg font-bold text-red-600">
-          Error Loading Patreon Dashboard
-        </h3>
-        <p className="text-xs text-slate-500 mt-1">
-          {error?.data?.message || "Failed to load subscriber analytics."}
-        </p>
+        <h3 className="text-lg font-bold text-red-600">Could not load the dashboard</h3>
+        <p className="text-xs text-slate-500 mt-1">{error?.data?.message || "Please check your connection or log in again."}</p>
       </div>
     );
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-96">
-        <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary-500 border-t-transparent"></div>
-          <p className="text-sm text-slate-500">
-            Calculating Patreon metrics...
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const { accounts, signInMethods, patreon } = stats;
+  const pct = (n) => (patreon.activePatrons > 0 ? Math.round((n / patreon.activePatrons) * 100) : 0);
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
-            <Icon icon="heroicons:heart" className="text-2xl" />
+          <div className="p-2.5 rounded-xl bg-red-500/10 text-[#FF424D]">
+            <Icon icon="simple-icons:patreon" className="text-2xl" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-              Patreon Analytics
-            </h1>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Members & Patreon</h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Live overview of active memberships, monthly revenue, and tier
-              breakdown.
+              Website accounts and the Patreon accounts connected to them.
             </p>
           </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            text="Manage Subscribers"
-            icon="heroicons:user-group"
-            className="btn-primary btn-sm"
-            onClick={() => navigate("/admin/patreon/users")}
-          />
-        </div>
+        <Button text="Open Members" icon="heroicons:user-group" className="btn-primary btn-sm" onClick={() => navigate("/admin/members")} />
       </div>
 
-      {/* Top Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* Active Patrons */}
-        <Card
-          noborder
-          className="shadow-md bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/20"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                Active Patrons
-              </p>
-              <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
-                {stats.activePatrons}
-              </h3>
-              <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Active paying subscribers
-              </p>
-            </div>
-            <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-2xl">
-              <Icon icon="heroicons:check-badge" />
-            </div>
-          </div>
-        </Card>
-
-        {/* Monthly Revenue */}
-        <Card
-          noborder
-          className="shadow-md bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-transparent border border-purple-500/20"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400">
-                Est. Monthly Revenue
-              </p>
-              <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
-                ${(stats.totalRevenue / 100).toFixed(2)}
-              </h3>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Avg. ${(stats.averagePledge / 100).toFixed(2)} / active patron
-              </p>
-            </div>
-            <div className="p-3 rounded-2xl bg-purple-500/20 text-purple-600 dark:text-purple-400 text-2xl">
-              <Icon icon="heroicons:currency-dollar" />
-            </div>
-          </div>
-        </Card>
-
-        {/* Total Accounts */}
-        <Card
-          noborder
-          className="shadow-md bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border border-blue-500/20"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                Total Registered
-              </p>
-              <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
-                {stats.totalUsers}
-              </h3>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Connected Patreon accounts
-              </p>
-            </div>
-            <div className="p-3 rounded-2xl bg-blue-500/20 text-blue-600 dark:text-blue-400 text-2xl">
-              <Icon icon="heroicons:users" />
-            </div>
-          </div>
-        </Card>
-
-        {/* Inactive Patrons */}
-        <Card
-          noborder
-          className="shadow-md bg-gradient-to-br from-slate-500/10 via-slate-500/5 to-transparent border border-slate-500/20"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                Inactive / Free
-              </p>
-              <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
-                {stats.inactivePatrons}
-              </h3>
-              <p className="text-[11px] text-slate-500 mt-1">
-                {stats.conversionRate.toFixed(1)}% active conversion rate
-              </p>
-            </div>
-            <div className="p-3 rounded-2xl bg-slate-500/20 text-slate-600 dark:text-slate-400 text-2xl">
-              <Icon icon="heroicons:user-minus" />
-            </div>
-          </div>
-        </Card>
+        <Stat
+          label="Accounts"
+          value={accounts.total}
+          note={`${accounts.confirmed} with a confirmed email`}
+          icon="heroicons:users"
+          tone="border-blue-500/20"
+        />
+        <Stat
+          label="PRO now"
+          value={accounts.pro}
+          note={`${accounts.manualPro} set by hand · ${accounts.free} free`}
+          icon="heroicons:check-badge"
+          tone="border-emerald-500/20"
+        />
+        <Stat
+          label="Active patrons"
+          value={patreon.activePatrons}
+          note={`of ${patreon.connected} connected Patreon accounts`}
+          icon="simple-icons:patreon"
+          tone="border-red-500/20"
+        />
+        <Stat
+          label="Est. monthly pledges"
+          value={formatMoney(patreon.estMonthlyCents, "USD")}
+          note="From saved pledges, before Patreon fees"
+          icon="heroicons:currency-dollar"
+          tone="border-purple-500/20"
+        />
       </div>
 
-      {/* Tier Breakdown & Quick Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Membership Tier Distribution */}
-        <Card noborder className="lg:col-span-2 shadow-lg">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60 mb-6">
-            <div>
-              <h4 className="text-base font-bold text-slate-900 dark:text-white">
-                Active Tier Distribution
-              </h4>
-              <p className="text-xs text-slate-500">
-                Breakdown of paying subscribers across membership tiers.
-              </p>
+        <Card title="Active patrons by tier" className="lg:col-span-2 shadow-lg">
+          {patreon.tiers.length === 0 ? (
+            <p className="text-sm text-slate-500">No active patrons among connected accounts yet.</p>
+          ) : (
+            <div className="space-y-5">
+              {patreon.tiers.map((t, i) => (
+                <div key={t.name || "none"}>
+                  <div className="flex justify-between items-center text-sm font-semibold mb-1.5">
+                    <span className="text-slate-700 dark:text-slate-300">{t.name || "Tier not known"}</span>
+                    <span className="text-slate-900 dark:text-white">
+                      {t.count} <span className="text-xs font-normal text-slate-400">({pct(t.count)}%) · {formatMoney(t.pledgeCents, "USD")}/mo</span>
+                    </span>
+                  </div>
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                    <div className={`${TIER_COLORS[i % TIER_COLORS.length]} h-full rounded-full`} style={{ width: `${pct(t.count)}%` }} />
+                  </div>
+                </div>
+              ))}
             </div>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800">
-              💎 {stats.activePatrons} Active
-            </span>
-          </div>
-
-          <div className="space-y-5">
-            {/* Basic Tier */}
-            <div>
-              <div className="flex justify-between items-center text-sm font-semibold mb-1.5">
-                <span className="text-slate-700 dark:text-slate-300">
-                  Basic Tier
-                </span>
-                <span className="text-slate-900 dark:text-white">
-                  {stats.tierBreakdown.basic}{" "}
-                  <span className="text-xs font-normal text-slate-400">
-                    (
-                    {stats.activePatrons > 0
-                      ? (
-                          (stats.tierBreakdown.basic / stats.activePatrons) *
-                          100
-                        ).toFixed(0)
-                      : 0}
-                    %)
-                  </span>
-                </span>
-              </div>
-              <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
-                <div
-                  className="bg-slate-400 h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${stats.activePatrons > 0 ? (stats.tierBreakdown.basic / stats.activePatrons) * 100 : 0}%`,
-                  }}
-                ></div>
-              </div>
-            </div>
-
-            {/* Standard Tier */}
-            <div>
-              <div className="flex justify-between items-center text-sm font-semibold mb-1.5">
-                <span className="text-slate-700 dark:text-slate-300">
-                  Standard Tier
-                </span>
-                <span className="text-slate-900 dark:text-white">
-                  {stats.tierBreakdown.standard}{" "}
-                  <span className="text-xs font-normal text-slate-400">
-                    (
-                    {stats.activePatrons > 0
-                      ? (
-                          (stats.tierBreakdown.standard / stats.activePatrons) *
-                          100
-                        ).toFixed(0)
-                      : 0}
-                    %)
-                  </span>
-                </span>
-              </div>
-              <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
-                <div
-                  className="bg-blue-500 h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${stats.activePatrons > 0 ? (stats.tierBreakdown.standard / stats.activePatrons) * 100 : 0}%`,
-                  }}
-                ></div>
-              </div>
-            </div>
-
-            {/* Premium Tier */}
-            <div>
-              <div className="flex justify-between items-center text-sm font-semibold mb-1.5">
-                <span className="text-slate-700 dark:text-slate-300">
-                  Premium Tier
-                </span>
-                <span className="text-slate-900 dark:text-white">
-                  {stats.tierBreakdown.premium}{" "}
-                  <span className="text-xs font-normal text-slate-400">
-                    (
-                    {stats.activePatrons > 0
-                      ? (
-                          (stats.tierBreakdown.premium / stats.activePatrons) *
-                          100
-                        ).toFixed(0)
-                      : 0}
-                    %)
-                  </span>
-                </span>
-              </div>
-              <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
-                <div
-                  className="bg-purple-600 h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${stats.activePatrons > 0 ? (stats.tierBreakdown.premium / stats.activePatrons) * 100 : 0}%`,
-                  }}
-                ></div>
-              </div>
-            </div>
-          </div>
+          )}
         </Card>
 
-        {/* Quick Insights */}
-        <Card noborder className="shadow-lg flex flex-col justify-between">
-          <div>
-            <h4 className="text-base font-bold text-slate-900 dark:text-white mb-1">
-              Subscriber Summary
-            </h4>
-            <p className="text-xs text-slate-500 mb-6">
-              Key conversion and average pledge insights.
-            </p>
-
-            <div className="space-y-4 text-sm">
-              <div className="flex justify-between items-center py-2.5 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-slate-500 dark:text-slate-400">
-                  Active Rate
-                </span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                  {stats.conversionRate.toFixed(1)}%
-                </span>
+        <Card title="How members sign in" className="shadow-lg">
+          <div className="text-sm">
+            {[
+              ["Email and password", signInMethods.email],
+              ["Google", signInMethods.google],
+              ["Patreon", signInMethods.patreon],
+              ["Blocked accounts", accounts.blocked],
+            ].map(([label, n]) => (
+              <div key={label} className="flex justify-between py-2.5 border-b last:border-0 border-slate-100 dark:border-slate-800">
+                <span className="text-slate-500 dark:text-slate-400">{label}</span>
+                <span className="font-bold text-slate-800 dark:text-white">{n}</span>
               </div>
-
-              <div className="flex justify-between items-center py-2.5 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-slate-500 dark:text-slate-400">
-                  Avg. Active Pledge
-                </span>
-                <span className="font-bold text-slate-800 dark:text-white">
-                  ${(stats.averagePledge / 100).toFixed(2)}/mo
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center py-2.5 text-sm">
-                <span className="text-slate-500 dark:text-slate-400">
-                  Patreon Integration
-                </span>
-                <span className="font-semibold text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full">
-                  ● Connected
-                </span>
-              </div>
-            </div>
+            ))}
           </div>
-
-          <Button
-            text="View All Subscribers"
-            icon="heroicons:arrow-right"
-            className="btn-outline-dark btn-sm w-full mt-6"
-            onClick={() => navigate("/admin/patreon/users")}
-          />
+          <p className="text-[11px] text-slate-500 mt-4">
+            One account can use several ways to sign in. Patrons who never connected their Patreon to the website are not counted here; Patreon's own dashboard has the full list.
+          </p>
         </Card>
       </div>
     </div>

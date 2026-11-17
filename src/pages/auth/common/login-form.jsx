@@ -1,10 +1,8 @@
 import Button from '@/components/ui/Button';
-import Checkbox from '@/components/ui/Checkbox';
 import Textinput from '@/components/ui/Textinput';
 import { useLoginMutation } from '@/store/api/auth/authApiSlice';
 import { setUser } from '@/store/api/auth/authSlice';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -54,8 +52,6 @@ const LoginForm = () => {
 		}
 	};
 
-	const [checked, setChecked] = useState(false);
-
 	return (
 		<form
 			onSubmit={handleSubmit(onSubmit)}
@@ -78,19 +74,6 @@ const LoginForm = () => {
 				error={errors.password}
 				className="h-[48px]"
 			/>
-			<div className="flex justify-between">
-				<Checkbox
-					value={checked}
-					onChange={() => setChecked(!checked)}
-					label="Keep me signed in"
-				/>
-				{/* <Link
-          to="/forgot-password"
-          className="text-sm text-slate-800 dark:text-slate-400 leading-6 font-medium"
-        >
-          Forgot Password?{" "}
-        </Link> */}
-			</div>
 
 			<Button
 				type="submit"
