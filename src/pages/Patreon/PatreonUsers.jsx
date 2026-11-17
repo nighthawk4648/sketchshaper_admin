@@ -1,4 +1,5 @@
 import Card from "@/components/ui/Card";
+import { escapeHtml } from "@/utils/escapeHtml";
 import Icon from "@/components/ui/Icon";
 import Tooltip from "@/components/ui/Tooltip";
 import { usePatreon } from "@/hooks/usePatreon";
@@ -32,7 +33,7 @@ const PatreonUsers = () => {
   const handleRevoke = (user) => {
     Swal.fire({
       title: "Revoke Patron Access?",
-      html: `Are you sure you want to revoke active patron status for <b class="text-slate-900 dark:text-white">${user.full_name || user.email}</b>?<br/><span class="text-xs text-red-500">The user will lose access to paid 3D downloads until they re-authenticate.</span>`,
+      html: `Are you sure you want to revoke active patron status for <b class="text-slate-900 dark:text-white">${escapeHtml(user.full_name || user.email)}</b>?<br/><span class="text-xs text-red-500">The user will lose access to paid 3D downloads until they re-authenticate.</span>`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#ef4444",

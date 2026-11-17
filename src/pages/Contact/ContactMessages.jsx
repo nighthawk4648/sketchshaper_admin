@@ -1,4 +1,5 @@
 import Card from "@/components/ui/Card";
+import { escapeHtml } from "@/utils/escapeHtml";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Icon from "@/components/ui/Icon";
@@ -164,7 +165,7 @@ const ContactMessages = () => {
   const handleDelete = (msg) => {
     Swal.fire({
       title: "Delete Message?",
-      html: `Are you sure you want to delete the message from <b class="text-slate-800 dark:text-white">${msg.name}</b>?<br/><span class="text-xs text-red-500">Any private attachments will also be permanently deleted.</span>`,
+      html: `Are you sure you want to delete the message from <b class="text-slate-800 dark:text-white">${escapeHtml(msg.name)}</b>?<br/><span class="text-xs text-red-500">Any private attachments will also be permanently deleted.</span>`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#ef4444",
