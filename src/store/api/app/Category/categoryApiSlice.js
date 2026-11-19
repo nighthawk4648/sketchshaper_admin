@@ -3,8 +3,9 @@ import { apiSlice } from '@/store/api/apiSlice';
 export const categoryApiSlice = apiSlice.injectEndpoints({
 	endpoints: (builder) => ({
 		getCategories: builder.query({
-			query: () => 'categories',
-			providesTags: ['category'],
+			// Names, sub-categories and model counts only (~3 KB); 'categories' adds every model (~680 KB)
+			query: () => 'categories/nav',
+			providesTags: ['category', 'subCategories'],
 		}),
 
 		getCategoriesByPagination: builder.query({

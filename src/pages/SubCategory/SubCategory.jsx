@@ -31,13 +31,13 @@ const SubCategory = () => {
 
 	const { data: allCategoriesData } = useGetCategoriesQuery();
 
-	const subCategoryAssetsMap = useMemo(() => {
+	const subCategoryAssetCount = useMemo(() => {
 		const map = new Map();
 		const categories = allCategoriesData?.data || [];
 		categories.forEach((cat) => {
 			if (Array.isArray(cat.sub_categories)) {
 				cat.sub_categories.forEach((sub) => {
-					map.set(sub.id, sub.assets || []);
+					map.set(sub.id, sub._count?.assets ?? 0);
 				});
 			}
 		});
@@ -99,7 +99,6 @@ const SubCategory = () => {
 			}
 
 			const exportRows = subCategories.map((subCat) => {
-				const assets = subCategoryAssetsMap.get(subCat.id) || [];
 				const categoryName = subCat.category?.name || '';
 
 				let formattedDate = '';
@@ -118,7 +117,7 @@ const SubCategory = () => {
 					'Meta Title': stripHtml(subCat.meta_title),
 					'Meta Description': stripHtml(subCat.meta_description),
 					'Keywords': subCat.keywords || '',
-					'Total Assets': assets.length,
+					'Total Assets': subCategoryAssetCount.get(subCat.id) || 0,
 					'Created At': formattedDate,
 				};
 			});

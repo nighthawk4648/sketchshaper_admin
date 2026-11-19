@@ -36,7 +36,7 @@ const SelectCategory = ({
                 defaultValue={defaultValue}
                 render={({ field: { onChange, onBlur, value, ref } }) => (
                     <SelectCustom
-                        isMarked={isMarked}
+                        isMarked={isMarked || Boolean(errors?.[name || 'category_id'])}
                         defaultValue={defaultValue}
                         options={options}
                         onChange={onChange}
@@ -47,7 +47,7 @@ const SelectCategory = ({
                 )}
                 rules={{ required: 'Category is required!' }}
             />
-            <ReactSelectError errorName={errors?.[name ? name : 'category']} />
+            <ReactSelectError errorName={errors?.[name || 'category_id']} />
         </>
     );
 };
