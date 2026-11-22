@@ -22,6 +22,8 @@ const Assets = () => {
   const limit = Number(params.get("limit")) || 10;
   const search = params.get("search") || "";
   const subCategoryId = params.get("sub_category_id") || "";
+  const sortBy = params.get("sort_by") || "";
+  const sortOrder = params.get("order") || "desc";
 
   const [subCategoryFilterQuery, setSubCategoryFilterQuery] = useState("");
 
@@ -41,6 +43,18 @@ const Assets = () => {
   const setPage = (p) => update({ page: p });
   const setLimit = (l) => update({ limit: l, page: 1 }, { replace: true });
   const setSearch = (s) => update({ search: s, page: 1 }, { replace: true });
+
+  // Header click cycles first order -> the other order -> back to the default (newest first)
+  const handleSort = (column) => {
+    const first = column.sortFirst || "asc";
+    if (sortBy !== column.sortKey) {
+      update({ sort_by: column.sortKey, order: first, page: 1 }, { replace: true });
+    } else if (sortOrder === first) {
+      update({ order: first === "asc" ? "desc" : "asc", page: 1 }, { replace: true });
+    } else {
+      update({ sort_by: "", order: "", page: 1 }, { replace: true });
+    }
+  };
 
   const handleSelectSubCategory = (id) => {
     if (!id) {
@@ -89,6 +103,8 @@ const Assets = () => {
       limit: limit,
       search: search,
       sub_category_id: subCategoryId,
+      sort_by: sortBy,
+      order: sortOrder,
     },
     { refetchOnMountOrArgChange: true },
   );
@@ -133,11 +149,13 @@ const Assets = () => {
     {
       Header: "Name",
       accessor: "name",
+      sortKey: "name",
       Cell: (row) => <span>{row?.cell?.value}</span>,
     },
     {
       Header: "Sub-Category",
       accessor: "sub_category.name",
+      sortKey: "sub_category",
       Cell: (row) => {
         const subCat = row?.cell?.row?.original?.sub_category;
         const catName =
@@ -211,6 +229,13 @@ const Assets = () => {
       },
     },
     {
+      Header: "Downloads",
+      accessor: "download_count",
+      sortKey: "download_count",
+      sortFirst: "desc", // most downloaded first
+      Cell: (row) => <span className="font-semibold">{row?.cell?.value ?? 0}</span>,
+    },
+    {
       Header: "Access Type",
       accessor: "access_type",
       Cell: (row) => {
@@ -271,6 +296,7 @@ const Assets = () => {
           "Category": categoryName,
           "Sub-Category": subCategoryName,
           "Access Type": asset.access_type || "free",
+          "Downloads": asset.download_count ?? 0,
           "Resolution": asset.resolution || "",
           "Size": asset.size || "",
           "Attached 3D File": fileName || "No 3D File",
@@ -470,6 +496,9 @@ const Assets = () => {
         isView={false}
         isExcelExport={true}
         handleExport={handleExport}
+        onSort={handleSort}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
       />
     </>
   );

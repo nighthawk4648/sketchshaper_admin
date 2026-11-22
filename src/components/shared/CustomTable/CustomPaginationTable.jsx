@@ -4,9 +4,8 @@ import { Icon } from "@iconify/react";
 import Button from "@/components/ui/Button";
 import Tooltip from "@/components/ui/Tooltip";
 import useDelete from "@/hooks/useDelete";
-import React, { useEffect, useMemo, Fragment } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, Transition } from "@headlessui/react";
 import {
   useGlobalFilter,
   usePagination,
@@ -17,6 +16,7 @@ import {
 
 import Status from "../status/Status";
 import GlobalFilter from "./GlobalFilter";
+import ExportMenu from "./ExportMenu";
 
 const IndeterminateCheckbox = React.forwardRef(
   ({ indeterminate, ...rest }, ref) => {
@@ -81,6 +81,10 @@ const CustomPaginationTable = ({
   isExcelExport = false,
   handleExport,
   leftContent,
+  // Opt-in server sorting: only columns with a `sortKey` are clickable, and onSort(column) asks the server
+  onSort,
+  sortBy,
+  sortOrder,
 }) => {
   const navigate = useNavigate();
   const { handleDelete } = useDelete();
@@ -308,63 +312,7 @@ const CustomPaginationTable = ({
                 setSearch={setSearch}
               />
             )}
-            {isExcelExport && (
-              <Menu as="div" className="relative inline-block text-left">
-                <Menu.Button as="div" className="cursor-pointer">
-                  <Button
-                    div={true}
-                    icon="heroicons-outline:arrow-down-tray"
-                    text="Download"
-                    className="btn-outline-dark dark:border-slate-700 h-min text-sm font-normal"
-                    iconClass="text-lg"
-                  />
-                </Menu.Button>
-                <Transition
-                  as={Fragment}
-                  enter="transition ease-out duration-100"
-                  enterFrom="transform opacity-0 scale-95"
-                  enterTo="transform opacity-100 scale-100"
-                  leave="transition ease-in duration-75"
-                  leaveFrom="transform opacity-100 scale-100"
-                  leaveTo="transform opacity-0 scale-95"
-                >
-                  <Menu.Items className="absolute right-0 mt-2 w-48 rounded bg-white dark:bg-slate-800 shadow-dropdown z-[9999] border border-slate-100 dark:border-slate-700 py-1 focus:outline-none">
-                    <Menu.Item>
-                      {({ active }) => (
-                        <button
-                          type="button"
-                          onClick={() => handleExport && handleExport("xlsx")}
-                          className={`w-full text-left px-4 py-2 text-sm flex items-center space-x-2 rtl:space-x-reverse ${
-                            active
-                              ? "bg-slate-100 text-slate-900 dark:bg-slate-700 dark:text-slate-100"
-                              : "text-slate-600 dark:text-slate-300"
-                          }`}
-                        >
-                          <Icon icon="vscode-icons:file-type-excel" className="text-lg" />
-                          <span>Excel (.xlsx)</span>
-                        </button>
-                      )}
-                    </Menu.Item>
-                    <Menu.Item>
-                      {({ active }) => (
-                        <button
-                          type="button"
-                          onClick={() => handleExport && handleExport("csv")}
-                          className={`w-full text-left px-4 py-2 text-sm flex items-center space-x-2 rtl:space-x-reverse ${
-                            active
-                              ? "bg-slate-100 text-slate-900 dark:bg-slate-700 dark:text-slate-100"
-                              : "text-slate-600 dark:text-slate-300"
-                          }`}
-                        >
-                          <Icon icon="vscode-icons:file-type-csv" className="text-lg" />
-                          <span>CSV (.csv)</span>
-                        </button>
-                      )}
-                    </Menu.Item>
-                  </Menu.Items>
-                </Transition>
-              </Menu>
-            )}
+            {isExcelExport && <ExportMenu onExport={handleExport} />}
             {addNew && (
               <div>
                 <Button
@@ -389,24 +337,23 @@ const CustomPaginationTable = ({
                 <thead className="bg-slate-200 dark:bg-slate-700">
                   {headerGroups.map((headerGroup) => (
                     <tr {...headerGroup.getHeaderGroupProps()}>
-                      {headerGroup.headers.map((column) => (
-                        <th
-                          {...column.getHeaderProps(
-                            column.getSortByToggleProps(),
-                          )}
-                          scope="col"
-                          className=" table-th "
-                        >
-                          {column.render("Header")}
-                          <span>
-                            {column.isSorted
-                              ? column.isSortedDesc
-                                ? " 🔽"
-                                : " 🔼"
-                              : ""}
-                          </span>
-                        </th>
-                      ))}
+                      {headerGroup.headers.map((column) => {
+                        // With onSort, only columns that have a sortKey are clickable and the server does the sorting
+                        const sortProps = onSort
+                          ? column.sortKey
+                            ? { onClick: () => onSort(column), style: { cursor: "pointer" } }
+                            : {}
+                          : column.getSortByToggleProps();
+                        const sorted = onSort
+                          ? column.sortKey && sortBy === column.sortKey && (sortOrder === "asc" ? " 🔼" : " 🔽")
+                          : column.isSorted && (column.isSortedDesc ? " 🔽" : " 🔼");
+                        return (
+                          <th {...column.getHeaderProps(sortProps)} scope="col" className=" table-th ">
+                            {column.render("Header")}
+                            <span>{sorted || ""}</span>
+                          </th>
+                        );
+                      })}
                     </tr>
                   ))}
                 </thead>

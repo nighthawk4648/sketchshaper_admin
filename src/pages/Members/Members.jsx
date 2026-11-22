@@ -1,10 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import Card from "@/components/ui/Card";
 import Icon from "@/components/ui/Icon";
+import ExportMenu from "@/components/shared/CustomTable/ExportMenu";
 import { useGetMembersQuery } from "@/store/api/app/Members/membersApiSlice";
+import { exportToExcel, exportToCsv } from "@/utils/exportToExcel";
+import { toMemberRow } from "@/utils/memberExport";
 import { AccessBadge, AccessDetail, SignInBadges, formatDate } from "./memberBadges";
 
+const ALL = 10000; // the server accepts up to this many rows per request
 const FILTERS = [
   { key: "all", label: "All" },
   { key: "pro", label: "PRO" },
@@ -19,12 +24,23 @@ const Members = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
-  const { data, isLoading, isError, error, isFetching } = useGetMembersQuery({ page, search, filter });
+  const [limit, setLimit] = useState(20); // 20, 50, 100 or ALL
+  const { data, isLoading, isError, error, isFetching } = useGetMembersQuery({ page, search, filter, limit });
 
   const members = data?.data?.result || [];
   const totalPages = data?.data?.pagination?.totalPages || 1;
   const total = data?.data?.pagination?.total || 0;
   const open = (id) => navigate(`/admin/members/${id}`);
+
+  // Exports what the list shows: this page for 20/50/100, everyone for View All
+  const handleExport = (format) => {
+    if (!members.length) {
+      toast.info("No members to export");
+      return;
+    }
+    const fileName = `Members_${filter}_${limit === ALL ? "all" : `page${page}`}_${new Date().toISOString().slice(0, 10)}`;
+    (format === "csv" ? exportToCsv : exportToExcel)(members.map(toMemberRow), fileName);
+  };
 
   return (
     <Card noborder className="shadow-lg">
@@ -41,18 +57,22 @@ const Members = () => {
           </div>
         </div>
 
-        <div className="relative min-w-[240px]">
-          <input
-            type="text"
-            placeholder="Search name or email..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            className="form-control py-2 pl-9 text-sm rounded-lg"
-          />
-          <Icon icon="heroicons:magnifying-glass" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative min-w-[240px]">
+            <input
+              type="text"
+              placeholder="Search name or email..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="form-control py-2 pl-9 text-sm rounded-lg"
+            />
+            <Icon icon="heroicons:magnifying-glass" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          </div>
+
+          <ExportMenu onExport={handleExport} disabled={isFetching} />
         </div>
       </div>
 
@@ -139,9 +159,26 @@ const Members = () => {
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-5 mt-2 border-t border-slate-100 dark:border-slate-700/60">
-            <p className="text-xs text-slate-500">
-              Showing <b>{members.length}</b> of <b>{total}</b> member(s)
-            </p>
+            <div className="flex items-center gap-3">
+              <select
+                className="form-control py-2 w-max text-sm"
+                value={limit}
+                onChange={(e) => {
+                  setLimit(Number(e.target.value));
+                  setPage(1);
+                }}
+              >
+                {[20, 50, 100].map((n) => (
+                  <option key={n} value={n}>
+                    Show {n}
+                  </option>
+                ))}
+                <option value={ALL}>View All</option>
+              </select>
+              <p className="text-xs text-slate-500">
+                Showing <b>{members.length}</b> of <b>{total}</b> member(s)
+              </p>
+            </div>
             {totalPages > 1 && (
               <div className="flex items-center gap-2">
                 <button
