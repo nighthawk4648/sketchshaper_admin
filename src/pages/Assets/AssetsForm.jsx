@@ -63,6 +63,12 @@ const GalleryImageCard = ({
 
   const previewSrc = objectUrl || resolveImageUrl(existingImageUrl);
   const hasExistingDbImage = dbImageId && typeof dbImageId === "number";
+  // The saved image is deleted on Save: by X, or because a new file replaces it
+  const stageRemoval = () => {
+    if (hasExistingDbImage) {
+      setRemovedImageIds((prev) => (prev.includes(dbImageId) ? prev : [...prev, dbImageId]));
+    }
+  };
 
   return (
     <div key={item.fieldId || `image-${index}`} className="flex flex-col">
@@ -72,9 +78,7 @@ const GalleryImageCard = ({
           type="button"
           title="Remove this image"
           onClick={() => {
-            if (hasExistingDbImage) {
-              setRemovedImageIds((prev) => [...prev, dbImageId]);
-            }
+            stageRemoval();
             remove(index);
           }}
           className="absolute -top-2 -right-2 z-20 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md hover:scale-110 transition-all cursor-pointer border-2 border-white dark:border-slate-800"
@@ -103,6 +107,7 @@ const GalleryImageCard = ({
                 onChange={(e) => {
                   const files = e.target.files;
                   onChange(files);
+                  if (files && files.length > 0) stageRemoval(); // Change Photo replaces the saved image
                   if (
                     files &&
                     files.length > 0 &&
