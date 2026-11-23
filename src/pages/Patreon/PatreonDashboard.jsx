@@ -67,7 +67,7 @@ const PatreonDashboard = () => {
         <Stat
           label="PRO now"
           value={accounts.pro}
-          note={`${accounts.manualPro} set by hand · ${accounts.free} free`}
+          note={`${accounts.manualPro} set by hand · ${accounts.adFree ?? 0} ad-free only · ${accounts.free} free`}
           icon="heroicons:check-badge"
           tone="border-emerald-500/20"
         />

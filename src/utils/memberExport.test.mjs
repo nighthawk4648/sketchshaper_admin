@@ -38,3 +38,12 @@ describe("toMemberRow", () => {
     assert.equal(free["Account Created"], "");
   });
 });
+
+it("Early Access members export as Ad-free, PRO tiers as PRO", () => {
+  const early = toMemberRow({ email: "e@x.com", proSource: "patreon", isPro: false, adFree: true, patreon: { tier: "Early Access" } });
+  assert.equal(early.Access, "Ad-free");
+  assert.equal(early.Tier, "Early Access");
+  assert.equal(toMemberRow({ email: "p@x.com", proSource: "patreon", isPro: true, adFree: true }).Access, "PRO");
+  assert.equal(toMemberRow({ email: "f@x.com", proSource: null, isPro: false, adFree: false }).Access, "Free");
+  assert.equal(toMemberRow({ email: "b@x.com", proSource: "blocked", isPro: false }).Access, "Blocked");
+});

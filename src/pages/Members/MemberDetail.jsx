@@ -11,12 +11,14 @@ import { formatMoney } from "@/utils/money";
 import { AccessBadge, AccessDetail, SignInBadges, formatDate } from "./memberBadges";
 import PaymentsCard from "./PaymentsCard";
 
-// The paid tiers on Patreon (same names, so manual and Patreon members line up). Each one gives PRO for now.
+// The paid tiers on Patreon (same names, so manual and Patreon members line up). Early Access only removes ads;
+// the others give PRO models too (the server decides this by tier name, see pro.service.mjs AD_FREE_TIERS).
 const TIERS = ["Early Access", "Sketch shaper-Pro", "Sponsor"];
+const AD_FREE_ONLY = "Early Access";
 
 const OPTIONS = [
   { access: "normal", label: "Normal" },
-  ...TIERS.map((tier) => ({ access: "pro", tier, label: tier })),
+  ...TIERS.map((tier) => ({ access: "pro", tier, label: tier === AD_FREE_ONLY ? `${tier} (ad-free only)` : tier })),
   { access: "blocked", label: "Blocked" },
 ];
 
