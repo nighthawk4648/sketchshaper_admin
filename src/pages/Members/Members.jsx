@@ -16,6 +16,7 @@ const FILTERS = [
   { key: "adfree", label: "Ad-free" },
   { key: "free", label: "Free" },
   { key: "patreon", label: "Patreon connected" },
+  { key: "polar", label: "Polar" },
   { key: "manual", label: "Set by hand" },
   { key: "blocked", label: "Blocked" },
 ];

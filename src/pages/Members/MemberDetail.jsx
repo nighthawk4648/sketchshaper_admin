@@ -58,7 +58,7 @@ const MemberDetail = () => {
     if (access === "blocked") {
       const { isConfirmed } = await Swal.fire({
         title: "Block this member?",
-        html: `<b>${escapeHtml(member.name || member.email)}</b> will not get PRO, even while they pledge on Patreon, until you set them back to Normal.`,
+        html: `<b>${escapeHtml(member.name || member.email)}</b> will not get PRO or ad-free access, even while they pay on Patreon or through our Pricing page, until you set them back to Normal.`,
         icon: "warning",
         showCancelButton: true,
         confirmButtonColor: "#ef4444",
