@@ -47,3 +47,10 @@ it("Early Access members export as Ad-free, PRO tiers as PRO", () => {
   assert.equal(toMemberRow({ email: "f@x.com", proSource: null, isPro: false, adFree: false }).Access, "Free");
   assert.equal(toMemberRow({ email: "b@x.com", proSource: "blocked", isPro: false }).Access, "Blocked");
 });
+
+it("Polar members export with their plan, and an end date only once cancelled", () => {
+  const pro = toMemberRow({ email: "g@x.com", proSource: "polar", isPro: true, adFree: true, polar: { plan: "pro", period: "monthly", status: "active", renewsAt: "2026-12-24T00:00:00.000Z", cancelsAtPeriodEnd: false } });
+  assert.deepEqual([pro.Access, pro["Access Source"], pro.Tier, pro["Access Until"]], ["PRO", "Polar", "Sketch shaper PRO", ""]);
+  const early = toMemberRow({ email: "h@x.com", proSource: "polar", isPro: false, adFree: true, polar: { plan: "early_access", status: "active", renewsAt: "2026-12-24T00:00:00.000Z", cancelsAtPeriodEnd: true } });
+  assert.deepEqual([early.Access, early.Tier, early["Access Until"]], ["Ad-free", "Early Access", "2026-12-24"]);
+});

@@ -1,5 +1,7 @@
+import { planName } from "./memberAccess.js";
+
 const METHOD_LABELS = { email: "Email", google: "Google", patreon: "Patreon" };
-const SOURCE_LABELS = { patreon: "Patreon", manual: "Manual" };
+const SOURCE_LABELS = { patreon: "Patreon", manual: "Manual", polar: "Polar" };
 
 const day = (iso) => (iso ? new Date(iso).toISOString().slice(0, 10) : "");
 
@@ -18,8 +20,9 @@ export const toMemberRow = (m) => ({
   "Signs In With": (m.signInMethods || []).map((s) => METHOD_LABELS[s] || s).join(", "),
   "Access": accessLabel(m),
   "Access Source": SOURCE_LABELS[m.proSource] || "",
-  "Tier": (m.proSource === "manual" ? m.accessTier : m.patreon?.tier) || "",
-  "Access Until": m.proSource === "manual" ? day(m.accessUntil) : "",
+  "Tier": (m.proSource === "manual" ? m.accessTier : m.proSource === "polar" ? planName(m.polar?.plan) : m.patreon?.tier) || "",
+  // A Polar plan renews by itself, so it only has an end date once it is cancelled
+  "Access Until": m.proSource === "manual" ? day(m.accessUntil) : m.proSource === "polar" && m.polar?.cancelsAtPeriodEnd ? day(m.polar.renewsAt) : "",
   "Patreon Last Checked": day(m.patreon?.lastVerifiedAt),
   "Account Created": day(m.createdAt),
 });
