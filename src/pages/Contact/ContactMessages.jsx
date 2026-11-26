@@ -46,6 +46,15 @@ const STATUS_CONFIG = {
   },
 };
 
+const MEMBER_PLAN_LABELS = {
+  early_access: "Early Access",
+  pro: "PRO",
+  sponsor: "Sponsor",
+};
+
+const MEMBER_BADGE_CLASS =
+  "inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20";
+
 const formatFileSize = (bytes) => {
   if (!bytes || typeof bytes !== "number") return "";
   if (bytes < 1024 * 1024) {
@@ -373,6 +382,10 @@ const ContactMessages = () => {
                           isUnread
                             ? "bg-amber-500/[0.03] dark:bg-amber-500/[0.04] font-medium"
                             : ""
+                        } ${
+                          msg.member_plan
+                            ? "border-l-4 border-emerald-500"
+                            : ""
                         }`}
                       >
                         {/* Sender Info & WhatsApp */}
@@ -392,6 +405,11 @@ const ContactMessages = () => {
                                 <p className="text-sm font-semibold text-slate-900 dark:text-white truncate max-w-[160px]">
                                   {msg.name}
                                 </p>
+                                {MEMBER_PLAN_LABELS[msg.member_plan] && (
+                                  <span className={MEMBER_BADGE_CLASS}>
+                                    {MEMBER_PLAN_LABELS[msg.member_plan]} member
+                                  </span>
+                                )}
                                 {isUnread && (
                                   <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
                                 )}
@@ -629,9 +647,16 @@ const ContactMessages = () => {
                     {selectedMessage.name?.[0]?.toUpperCase() || "?"}
                   </div>
                   <div>
-                    <h5 className="text-base font-bold text-slate-900 dark:text-white">
-                      {selectedMessage.name}
-                    </h5>
+                    <div className="flex items-center gap-2">
+                      <h5 className="text-base font-bold text-slate-900 dark:text-white">
+                        {selectedMessage.name}
+                      </h5>
+                      {MEMBER_PLAN_LABELS[selectedMessage.member_plan] && (
+                        <span className={MEMBER_BADGE_CLASS}>
+                          {MEMBER_PLAN_LABELS[selectedMessage.member_plan]} member
+                        </span>
+                      )}
+                    </div>
                     <div className="flex flex-wrap items-center gap-3 mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                       <a
                         href={`mailto:${selectedMessage.email}`}
